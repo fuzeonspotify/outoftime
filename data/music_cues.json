@@ -1,0 +1,32 @@
+{
+  "okay_intro": {
+    "title": "Okay",
+    "path": "res://assets/audio/local/okay.ogg",
+    "story_use": "Main menu and skeleton awakening; filtered or instrumental version",
+    "target_length_seconds": 60
+  },
+  "pontiac_ride": {
+    "title": "Pontiac",
+    "path": "res://assets/audio/local/pontiac.ogg",
+    "story_use": "Romantic spectral road-trip sequence; the emotional high before suspicion begins",
+    "target_length_seconds": 90
+  },
+  "rockstar_chase": {
+    "title": "Rockstar",
+    "path": "res://assets/audio/local/rockstar.ogg",
+    "story_use": "High-intensity chase or ruined-club escape where the skeleton feels unstoppable",
+    "target_length_seconds": 75
+  },
+  "circles_reveal": {
+    "title": "Circles",
+    "path": "res://assets/audio/local/circles.ogg",
+    "story_use": "Skeleton chamber reveal; vocals enter as repeated journals expose the manipulation cycle",
+    "target_length_seconds": 105
+  },
+  "out_of_time_finale": {
+    "title": "Out of Time",
+    "path": "res://assets/audio/local/out_of_time.ogg",
+    "story_use": "Betrayal, death scene and full ending credits",
+    "target_length_seconds": 0
+  }
+}
