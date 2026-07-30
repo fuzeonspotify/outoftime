@@ -46,29 +46,29 @@ func _build_interface() -> void:
 	_menu.add_child(tagline)
 
 	var spacer := Control.new()
-	spacer.custom_minimum_size = Vector2(1, 18)
+	spacer.custom_minimum_size = Vector2(1.0, 18.0)
 	_menu.add_child(spacer)
 
 	var start_button := Button.new()
 	start_button.text = "BEGIN"
-	start_button.custom_minimum_size = Vector2(320, 54)
-	start_button.pressed.connect(_begin_prologue)
+	start_button.custom_minimum_size = Vector2(320.0, 54.0)
+	start_button.pressed.connect(_begin_game)
 	_menu.add_child(start_button)
 
 	var soundtrack_button := Button.new()
 	soundtrack_button.text = "SOUNDTRACK PLAN"
-	soundtrack_button.custom_minimum_size = Vector2(320, 46)
+	soundtrack_button.custom_minimum_size = Vector2(320.0, 46.0)
 	soundtrack_button.pressed.connect(_show_soundtrack_plan)
 	_menu.add_child(soundtrack_button)
 
 	var quit_button := Button.new()
 	quit_button.text = "QUIT"
-	quit_button.custom_minimum_size = Vector2(320, 46)
+	quit_button.custom_minimum_size = Vector2(320.0, 46.0)
 	quit_button.pressed.connect(get_tree().quit)
 	_menu.add_child(quit_button)
 
 	_status_label = Label.new()
-	_status_label.text = "Prototype ready — local song files are optional for now."
+	_status_label.text = "Playable cemetery build ready."
 	_status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_status_label.modulate = Color("758098")
 	_status_label.add_theme_font_size_override("font_size", 14)
@@ -81,39 +81,9 @@ func _build_interface() -> void:
 	center.add_child(_story_panel)
 
 
-func _begin_prologue() -> void:
-	_menu.visible = false
-	_clear_story_panel()
-	_story_panel.visible = true
-
-	var chapter := Label.new()
-	chapter.text = "PROLOGUE"
-	chapter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	chapter.add_theme_font_size_override("font_size", 22)
-	chapter.modulate = Color("99a5bc")
-	_story_panel.add_child(chapter)
-
-	var heading := Label.new()
-	heading.text = "A skeleton wakes beneath a dead sky."
-	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	heading.add_theme_font_size_override("font_size", 36)
-	_story_panel.add_child(heading)
-
-	var body := Label.new()
-	body.text = "He remembers no name — only a woman, a red Pontiac,\nand the feeling that he is already too late."
-	body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	body.add_theme_font_size_override("font_size", 20)
-	body.modulate = Color("c4cada")
-	_story_panel.add_child(body)
-
-	var note := Label.new()
-	note.text = "This screen is the working foundation for the first playable cemetery scene."
-	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	note.modulate = Color("747f97")
-	_story_panel.add_child(note)
-
-	_add_back_button()
-	MusicDirector.play_cue("okay_intro", 1.5)
+func _begin_game() -> void:
+	MusicDirector.stop_music(0.35)
+	get_tree().change_scene_to_file("res://scenes/cemetery.tscn")
 
 
 func _show_soundtrack_plan() -> void:
@@ -134,13 +104,9 @@ func _show_soundtrack_plan() -> void:
 	sequence.modulate = Color("c8cede")
 	_story_panel.add_child(sequence)
 
-	_add_back_button()
-
-
-func _add_back_button() -> void:
 	var back_button := Button.new()
 	back_button.text = "BACK"
-	back_button.custom_minimum_size = Vector2(260, 46)
+	back_button.custom_minimum_size = Vector2(260.0, 46.0)
 	back_button.pressed.connect(_return_to_menu)
 	_story_panel.add_child(back_button)
 
@@ -151,10 +117,9 @@ func _clear_story_panel() -> void:
 
 
 func _return_to_menu() -> void:
-	MusicDirector.stop_music(0.6)
 	_story_panel.visible = false
 	_menu.visible = true
-	_status_label.text = "Prototype ready — local song files are optional for now."
+	_status_label.text = "Playable cemetery build ready."
 
 
 func _on_cue_missing(cue_id: String, expected_path: String) -> void:
