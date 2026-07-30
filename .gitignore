@@ -1,0 +1,21 @@
+# Godot-generated files
+.godot/
+.import/
+export.cfg
+export_presets.cfg
+
+# Local/editor files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Keep unreleased/master audio out of the public repository
+assets/audio/local/*.wav
+assets/audio/local/*.flac
+assets/audio/local/*.mp3
+assets/audio/local/*.ogg
+
+# Build output
+builds/
+exports/
