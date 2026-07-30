@@ -5,6 +5,12 @@
     "story_use": "Main menu and skeleton awakening; filtered or instrumental version",
     "target_length_seconds": 60
   },
+  "pontiac_memory": {
+    "title": "Pontiac",
+    "path": "res://assets/audio/local/pontiac.ogg",
+    "story_use": "First memory of the woman after the cemetery prologue",
+    "target_length_seconds": 30
+  },
   "pontiac_ride": {
     "title": "Pontiac",
     "path": "res://assets/audio/local/pontiac.ogg",
