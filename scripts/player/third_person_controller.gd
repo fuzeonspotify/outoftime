@@ -1,12 +1,12 @@
 extends CharacterBody3D
 
-@export var walk_speed := 5.0
-@export var sprint_speed := 8.0
-@export var acceleration := 18.0
-@export var jump_velocity := 6.0
-@export var mouse_sensitivity := 0.003
+@export var walk_speed: float = 5.0
+@export var sprint_speed: float = 8.0
+@export var acceleration: float = 18.0
+@export var jump_velocity: float = 6.0
+@export var mouse_sensitivity: float = 0.003
 
-var _gravity := 9.8
+var _gravity: float = 9.8
 var _camera_yaw: Node3D
 var _camera_pitch: Node3D
 var _visual_root: Node3D
@@ -14,7 +14,7 @@ var _prompt_label: Label
 var _message_label: Label
 var _objective_label: Label
 var _interaction_target: Node
-var _message_token := 0
+var _message_token: int = 0
 
 
 func _ready() -> void:
@@ -31,7 +31,7 @@ func _ready() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		_camera_yaw.rotate_y(-event.relative.x * mouse_sensitivity)
-		_camera_pitch.rotation.x = clamp(
+		_camera_pitch.rotation.x = clampf(
 			_camera_pitch.rotation.x - event.relative.y * mouse_sensitivity,
 			deg_to_rad(-55.0),
 			deg_to_rad(35.0)
@@ -55,32 +55,32 @@ func _physics_process(delta: float) -> void:
 	elif Input.is_action_just_pressed("jump"):
 		velocity.y = jump_velocity
 
-	var input_vector := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
-	var forward := -_camera_yaw.global_transform.basis.z
-	var right := _camera_yaw.global_transform.basis.x
+	var input_vector: Vector2 = Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+	var forward: Vector3 = -_camera_yaw.global_transform.basis.z
+	var right: Vector3 = _camera_yaw.global_transform.basis.x
 	forward.y = 0.0
 	right.y = 0.0
 	forward = forward.normalized()
 	right = right.normalized()
 
-	var move_direction := right * input_vector.x + forward * -input_vector.y
+	var move_direction: Vector3 = right * input_vector.x + forward * -input_vector.y
 	if move_direction.length_squared() > 0.001:
 		move_direction = move_direction.normalized()
 
-	var target_speed := sprint_speed if Input.is_action_pressed("sprint") else walk_speed
-	var target_velocity := move_direction * target_speed
+	var target_speed: float = sprint_speed if Input.is_action_pressed("sprint") else walk_speed
+	var target_velocity: Vector3 = move_direction * target_speed
 	velocity.x = move_toward(velocity.x, target_velocity.x, acceleration * delta)
 	velocity.z = move_toward(velocity.z, target_velocity.z, acceleration * delta)
 
 	if _visual_root != null:
-		var planar_speed := Vector2(velocity.x, velocity.z).length()
-		var bob_amount := clamp(planar_speed / sprint_speed, 0.0, 1.0)
+		var planar_speed: float = Vector2(velocity.x, velocity.z).length()
+		var bob_amount: float = clampf(planar_speed / sprint_speed, 0.0, 1.0)
 		_visual_root.position.y = sin(Time.get_ticks_msec() * 0.009) * 0.025 * bob_amount
 		if move_direction.length_squared() > 0.001:
 			_visual_root.rotation.y = lerp_angle(
 				_visual_root.rotation.y,
 				atan2(-move_direction.x, -move_direction.z),
-				min(1.0, delta * 10.0)
+				minf(1.0, delta * 10.0)
 			)
 
 	move_and_slide()
@@ -106,9 +106,9 @@ func set_objective(text: String) -> void:
 		_objective_label.text = "OBJECTIVE\n%s" % text
 
 
-func show_interaction_message(text: String, duration := 4.0) -> void:
+func show_interaction_message(text: String, duration: float = 4.0) -> void:
 	_message_token += 1
-	var token := _message_token
+	var token: int = _message_token
 	_message_label.text = text
 	_message_label.visible = true
 	await get_tree().create_timer(duration).timeout
@@ -130,15 +130,15 @@ func _add_key_action(action_name: StringName, physical_keycode: Key) -> void:
 	if InputMap.has_action(action_name):
 		return
 	InputMap.add_action(action_name)
-	var key_event := InputEventKey.new()
+	var key_event: InputEventKey = InputEventKey.new()
 	key_event.physical_keycode = physical_keycode
 	InputMap.action_add_event(action_name, key_event)
 
 
 func _build_collision() -> void:
-	var collision := CollisionShape3D.new()
+	var collision: CollisionShape3D = CollisionShape3D.new()
 	collision.name = "PlayerCollision"
-	var capsule := CapsuleShape3D.new()
+	var capsule: CapsuleShape3D = CapsuleShape3D.new()
 	capsule.radius = 0.34
 	capsule.height = 1.75
 	collision.shape = capsule
@@ -151,45 +151,45 @@ func _build_skeleton_visual() -> void:
 	_visual_root.name = "SkeletonVisual"
 	add_child(_visual_root)
 
-	var bone_material := StandardMaterial3D.new()
+	var bone_material: StandardMaterial3D = StandardMaterial3D.new()
 	bone_material.albedo_color = Color("d9d6c8")
 	bone_material.roughness = 0.82
 
-	var dark_material := StandardMaterial3D.new()
+	var dark_material: StandardMaterial3D = StandardMaterial3D.new()
 	dark_material.albedo_color = Color("171923")
 	dark_material.roughness = 0.95
 
-	var skull_mesh := SphereMesh.new()
+	var skull_mesh: SphereMesh = SphereMesh.new()
 	skull_mesh.radius = 0.27
 	skull_mesh.height = 0.52
 	_add_mesh(_visual_root, skull_mesh, Vector3(0.0, 1.67, 0.0), Vector3.ONE, bone_material)
 
-	var eye_mesh := SphereMesh.new()
+	var eye_mesh: SphereMesh = SphereMesh.new()
 	eye_mesh.radius = 0.055
 	eye_mesh.height = 0.1
 	_add_mesh(_visual_root, eye_mesh, Vector3(-0.09, 1.71, -0.235), Vector3.ONE, dark_material)
 	_add_mesh(_visual_root, eye_mesh, Vector3(0.09, 1.71, -0.235), Vector3.ONE, dark_material)
 
-	var jaw_mesh := BoxMesh.new()
+	var jaw_mesh: BoxMesh = BoxMesh.new()
 	jaw_mesh.size = Vector3(0.28, 0.13, 0.22)
 	_add_mesh(_visual_root, jaw_mesh, Vector3(0.0, 1.48, -0.015), Vector3.ONE, bone_material)
 
-	var spine_mesh := CylinderMesh.new()
+	var spine_mesh: CylinderMesh = CylinderMesh.new()
 	spine_mesh.top_radius = 0.055
 	spine_mesh.bottom_radius = 0.055
 	spine_mesh.height = 0.57
 	_add_mesh(_visual_root, spine_mesh, Vector3(0.0, 1.13, 0.0), Vector3.ONE, bone_material)
 
-	for rib_y in [1.37, 1.25, 1.13]:
-		var rib_mesh := BoxMesh.new()
+	for rib_y: float in [1.37, 1.25, 1.13]:
+		var rib_mesh: BoxMesh = BoxMesh.new()
 		rib_mesh.size = Vector3(0.55, 0.055, 0.13)
 		_add_mesh(_visual_root, rib_mesh, Vector3(0.0, rib_y, 0.0), Vector3.ONE, bone_material)
 
-	var pelvis_mesh := BoxMesh.new()
+	var pelvis_mesh: BoxMesh = BoxMesh.new()
 	pelvis_mesh.size = Vector3(0.42, 0.18, 0.22)
 	_add_mesh(_visual_root, pelvis_mesh, Vector3(0.0, 0.82, 0.0), Vector3.ONE, bone_material)
 
-	var limb_mesh := CapsuleMesh.new()
+	var limb_mesh: CapsuleMesh = CapsuleMesh.new()
 	limb_mesh.radius = 0.06
 	limb_mesh.height = 0.62
 	_add_mesh(_visual_root, limb_mesh, Vector3(-0.39, 1.12, 0.0), Vector3.ONE, bone_material, Vector3(0.0, 0.0, -10.0))
@@ -209,14 +209,14 @@ func _build_camera() -> void:
 	_camera_pitch.rotation.x = deg_to_rad(-10.0)
 	_camera_yaw.add_child(_camera_pitch)
 
-	var spring_arm := SpringArm3D.new()
+	var spring_arm: SpringArm3D = SpringArm3D.new()
 	spring_arm.name = "SpringArm3D"
 	spring_arm.spring_length = 5.2
 	spring_arm.margin = 0.12
 	spring_arm.collision_mask = 1
 	_camera_pitch.add_child(spring_arm)
 
-	var camera := Camera3D.new()
+	var camera: Camera3D = Camera3D.new()
 	camera.name = "Camera3D"
 	camera.current = true
 	camera.fov = 68.0
@@ -224,7 +224,7 @@ func _build_camera() -> void:
 
 
 func _build_hud() -> void:
-	var canvas := CanvasLayer.new()
+	var canvas: CanvasLayer = CanvasLayer.new()
 	canvas.name = "PlayerHUD"
 	add_child(canvas)
 
@@ -236,7 +236,7 @@ func _build_hud() -> void:
 	_objective_label.add_theme_color_override("font_color", Color("d8dbea"))
 	canvas.add_child(_objective_label)
 
-	var controls := Label.new()
+	var controls: Label = Label.new()
 	controls.anchor_left = 1.0
 	controls.anchor_right = 1.0
 	controls.offset_left = -340.0
@@ -249,7 +249,7 @@ func _build_hud() -> void:
 	controls.add_theme_color_override("font_color", Color("8991a8"))
 	canvas.add_child(controls)
 
-	var crosshair := Label.new()
+	var crosshair: Label = Label.new()
 	crosshair.anchor_left = 0.5
 	crosshair.anchor_right = 0.5
 	crosshair.anchor_top = 0.5
@@ -305,9 +305,9 @@ func _add_mesh(
 	mesh_position: Vector3,
 	mesh_scale: Vector3,
 	material: Material,
-	mesh_rotation_degrees := Vector3.ZERO
+	mesh_rotation_degrees: Vector3 = Vector3.ZERO
 ) -> MeshInstance3D:
-	var instance := MeshInstance3D.new()
+	var instance: MeshInstance3D = MeshInstance3D.new()
 	instance.mesh = mesh
 	instance.position = mesh_position
 	instance.scale = mesh_scale
