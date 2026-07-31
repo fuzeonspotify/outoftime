@@ -16,12 +16,15 @@ func prepare() -> bool:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(MODELS_ROOT))
 	var model_paths: Array[String] = _scan_model_paths()
 	if model_paths.is_empty():
-		var archive_ready: bool = FileAccess.file_exists(ARCHIVE_PATH)
-		if not archive_ready:
-			archive_ready = await _download_archive()
-		if not archive_ready:
-			return false
-		var extracted: bool = await _extract_archive()
+		var extracted: bool = false
+		if FileAccess.file_exists(ARCHIVE_PATH):
+			extracted = await _extract_archive()
+		if not extracted:
+			if FileAccess.file_exists(ARCHIVE_PATH):
+				DirAccess.remove_absolute(ProjectSettings.globalize_path(ARCHIVE_PATH))
+			if not await _download_archive():
+				return false
+			extracted = await _extract_archive()
 		if not extracted:
 			return false
 		model_paths = _scan_model_paths()
@@ -56,7 +59,7 @@ func _download_file(remote_url: String, local_path: String) -> bool:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(local_path.get_base_dir()))
 	var request_node: HTTPRequest = HTTPRequest.new()
 	request_node.use_threads = true
-	request_node.timeout = 45.0
+	request_node.timeout = 30.0
 	request_node.download_file = local_path
 	add_child(request_node)
 
