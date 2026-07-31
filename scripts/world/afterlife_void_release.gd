@@ -1,6 +1,18 @@
 extends "res://scripts/world/afterlife_void.gd"
 
 
+func _spawn_player() -> void:
+	super._spawn_player()
+	if _player != null and _player.has_method("set_void_jump_mode"):
+		_player.call("set_void_jump_mode", true)
+
+
+func _announce_gravity_state(state: StringName) -> void:
+	if _player != null and _player.has_method("set_void_gravity_state"):
+		_player.call("set_void_gravity_state", state)
+	super._announce_gravity_state(state)
+
+
 func _update_checkpoint() -> void:
 	var player_z: float = _player.position.z
 	if player_z < -112.0:
