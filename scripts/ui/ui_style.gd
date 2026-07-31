@@ -8,7 +8,6 @@ const COLOR_BORDER: Color = Color(0.44, 0.34, 0.66, 0.82)
 const COLOR_BORDER_SOFT: Color = Color(0.27, 0.23, 0.40, 0.70)
 const COLOR_ACCENT: Color = Color("d84b9e")
 const COLOR_ACCENT_COOL: Color = Color("7f8cff")
-const COLOR_SIGNAL: Color = Color("9b67d9")
 const COLOR_TEXT: Color = Color("f3edf7")
 const COLOR_TEXT_MUTED: Color = Color("aaa4b9")
 const COLOR_TEXT_DIM: Color = Color("747083")
@@ -22,6 +21,7 @@ static func make_panel_style(
 	padding: float = 16.0
 ) -> StyleBoxFlat:
 	var style: StyleBoxFlat = StyleBoxFlat.new()
+	var secondary_radius: int = maxi(2, int(float(radius) / 3.0))
 	style.bg_color = background
 	style.border_color = border
 	style.border_width_left = maxi(border_width, 1)
@@ -29,8 +29,8 @@ static func make_panel_style(
 	style.border_width_right = border_width
 	style.border_width_bottom = border_width
 	style.corner_radius_top_left = radius
-	style.corner_radius_top_right = maxi(2, radius / 3)
-	style.corner_radius_bottom_left = maxi(2, radius / 3)
+	style.corner_radius_top_right = secondary_radius
+	style.corner_radius_bottom_left = secondary_radius
 	style.corner_radius_bottom_right = radius
 	style.content_margin_left = padding
 	style.content_margin_top = padding
