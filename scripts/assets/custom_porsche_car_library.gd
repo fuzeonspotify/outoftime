@@ -1,7 +1,7 @@
 extends Node
 
 const CUSTOM_CAR_PATH: String = "res://assets/models/cars/porsche_911_turbo.glb"
-const CUSTOM_CAR_SCENE: PackedScene = preload(CUSTOM_CAR_PATH)
+const CUSTOM_CAR_SCENE: PackedScene = preload("res://assets/models/cars/porsche_911_turbo.glb")
 
 var _prototype: Node3D
 
