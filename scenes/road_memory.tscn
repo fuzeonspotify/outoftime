@@ -4,7 +4,7 @@
 [ext_resource type="Script" path="res://scripts/world/road_audio.gd" id="2_audio"]
 [ext_resource type="Script" path="res://scripts/world/environment_art_pass.gd" id="3_art"]
 [ext_resource type="Script" path="res://scripts/models/world_model_upgrade.gd" id="4_models"]
-[ext_resource type="Script" path="res://scripts/models/model_alignment_fixes.gd" id="5_alignment"]
+[ext_resource type="Script" path="res://scripts/models/model_runtime_alignment.gd" id="5_alignment"]
 [ext_resource type="Script" path="res://scripts/world/kenney_level_expansion.gd" id="6_kenney"]
 [ext_resource type="Script" path="res://scripts/world/road_release_polish.gd" id="7_release"]
 [ext_resource type="Script" path="res://scripts/ui/scene_ui_polish.gd" id="8_ui"]
@@ -21,7 +21,7 @@ script = ExtResource("3_art")
 [node name="WorldModelUpgrade" type="Node" parent="."]
 script = ExtResource("4_models")
 
-[node name="ModelAlignmentFixes" type="Node" parent="."]
+[node name="ModelRuntimeAlignment" type="Node" parent="."]
 script = ExtResource("5_alignment")
 
 [node name="KenneyLevelExpansion" type="Node" parent="."]
