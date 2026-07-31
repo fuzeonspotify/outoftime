@@ -1,9 +1,10 @@
 extends "res://scripts/world/road_memory_final_cut.gd"
 
 const REQUIRED_CAR_NODE_NAME: String = "Porsche911Turbo"
-const METALLIC_RED: Color = Color("98141f")
+const METALLIC_RED: Color = Color("d0182b")
 const BODY_MATERIAL_NAMES: Array[String] = [
 	"material.005",
+	"material_005",
 	"carpaint",
 	"car_paint",
 	"bodypaint",
@@ -57,18 +58,41 @@ func _build_car() -> void:
 
 func _paint_car_metallic_red(model_root: Node3D) -> void:
 	var mesh_nodes: Array[Node] = model_root.find_children("*", "MeshInstance3D", true, false)
+	var primary_body_mesh: MeshInstance3D
+	var largest_surface_count: int = -1
+
+	# In this Porsche GLB the main shell is surface 0 of the mesh containing
+	# all nine vehicle materials. Find that mesh structurally instead of relying
+	# only on an importer-generated material class or name.
+	for node: Node in mesh_nodes:
+		var mesh_instance: MeshInstance3D = node as MeshInstance3D
+		if mesh_instance == null or mesh_instance.mesh == null:
+			continue
+		var surface_count: int = mesh_instance.mesh.get_surface_count()
+		if surface_count > largest_surface_count:
+			largest_surface_count = surface_count
+			primary_body_mesh = mesh_instance
+
 	var painted_surfaces: int = 0
+	if primary_body_mesh != null and largest_surface_count > 0:
+		if _apply_metallic_red(primary_body_mesh, 0):
+			painted_surfaces += 1
+
+	# Also cover body surfaces by material semantics in case a later textured GLB
+	# splits the shell into multiple surfaces.
 	for node: Node in mesh_nodes:
 		var mesh_instance: MeshInstance3D = node as MeshInstance3D
 		if mesh_instance == null or mesh_instance.mesh == null:
 			continue
 		for surface_index: int in range(mesh_instance.mesh.get_surface_count()):
-			var source_material: Material = mesh_instance.get_active_material(surface_index)
-			var source_standard: StandardMaterial3D = source_material as StandardMaterial3D
-			if source_standard == null or source_standard.emission_enabled:
+			if mesh_instance == primary_body_mesh and surface_index == 0:
 				continue
-			var material_name: String = str(source_standard.resource_name).to_lower()
-			var source_color: Color = source_standard.albedo_color
+			var source_material: Material = mesh_instance.get_active_material(surface_index)
+			var source_base: BaseMaterial3D = source_material as BaseMaterial3D
+			if source_base == null or source_base.emission_enabled:
+				continue
+			var material_name: String = str(source_material.resource_name).to_lower()
+			var source_color: Color = source_base.albedo_color
 			var known_body_material: bool = BODY_MATERIAL_NAMES.has(material_name)
 			var semantic_body_material: bool = (
 				material_name.contains("paint")
@@ -83,19 +107,26 @@ func _paint_car_metallic_red(model_root: Node3D) -> void:
 			)
 			if not known_body_material and not semantic_body_material and not red_dominant_surface:
 				continue
-
-			var painted_material: StandardMaterial3D = source_standard.duplicate() as StandardMaterial3D
-			if painted_material == null:
-				continue
-			# Keep any supplied texture detail and tint it with the requested paint.
-			painted_material.albedo_color = METALLIC_RED
-			painted_material.metallic = 0.92
-			painted_material.roughness = 0.18
-			mesh_instance.set_surface_override_material(surface_index, painted_material)
-			painted_surfaces += 1
+			if _apply_metallic_red(mesh_instance, surface_index):
+				painted_surfaces += 1
 
 	if painted_surfaces == 0:
-		push_error("PORSCHE PAINT ERROR: no body-paint surface was identified; glass, tires, and lights were left unchanged.")
+		push_error("PORSCHE PAINT ERROR: the main shell surface could not be overridden.")
+
+
+func _apply_metallic_red(mesh_instance: MeshInstance3D, surface_index: int) -> bool:
+	var source_material: Material = mesh_instance.get_active_material(surface_index)
+	var painted_material: BaseMaterial3D
+	if source_material != null:
+		painted_material = source_material.duplicate() as BaseMaterial3D
+	if painted_material == null:
+		painted_material = StandardMaterial3D.new()
+
+	painted_material.albedo_color = METALLIC_RED
+	painted_material.metallic = 1.0
+	painted_material.roughness = 0.16
+	mesh_instance.set_surface_override_material(surface_index, painted_material)
+	return true
 
 
 func _remove_existing_bridge_car() -> void:
