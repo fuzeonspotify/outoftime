@@ -132,17 +132,14 @@ func set_interaction_target(
 		_reset_interaction_hold()
 	_interaction_target = target
 	_interaction_hold_duration = maxf(0.0, hold_seconds)
-	_prompt_title_label.text = title_text.to_upper()
+	_prompt_title_label.text = "%s  //  %s" % [title_text.to_upper(), context_text.to_upper()]
 	_prompt_action_label.text = prompt_text
 	_prompt_progress.visible = _interaction_hold_duration > 0.08
 	_prompt_progress.value = 0.0
-	_prompt_panel.tooltip_text = context_text
 	_prompt_panel.visible = true
 	_prompt_panel.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	var reveal_tween: Tween = create_tween()
-	reveal_tween.set_parallel(true)
 	reveal_tween.tween_property(_prompt_panel, "modulate:a", 1.0, 0.14)
-	reveal_tween.tween_property(_prompt_panel, "position:y", _prompt_panel.position.y - 4.0, 0.14)
 	_set_crosshair_focused(true)
 
 
@@ -182,11 +179,8 @@ func show_interaction_message(
 	_message_body_label.text = text
 	_message_panel.visible = true
 	_message_panel.modulate = Color(1.0, 1.0, 1.0, 0.0)
-	_message_panel.position.y += 8.0
 	var reveal_tween: Tween = create_tween()
-	reveal_tween.set_parallel(true)
 	reveal_tween.tween_property(_message_panel, "modulate:a", 1.0, 0.22)
-	reveal_tween.tween_property(_message_panel, "position:y", _message_panel.position.y - 8.0, 0.22)
 
 	await get_tree().create_timer(duration, true).timeout
 	if token != _message_token or _message_panel == null:
@@ -503,7 +497,7 @@ func _build_prompt_panel(hud_root: Control) -> void:
 	prompt_stack.add_theme_constant_override("separation", 2)
 	prompt_row.add_child(prompt_stack)
 
-	_prompt_title_label = UI_STYLE.make_label("INTERACTION", 12, UI_STYLE.COLOR_ACCENT_COOL)
+	_prompt_title_label = UI_STYLE.make_label("INTERACTION  //  HOLD TO INTERACT", 12, UI_STYLE.COLOR_ACCENT_COOL)
 	prompt_stack.add_child(_prompt_title_label)
 
 	_prompt_action_label = UI_STYLE.make_label("Interact", 18, UI_STYLE.COLOR_TEXT)
