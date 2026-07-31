@@ -11,6 +11,9 @@ func _update_interaction_hold(delta: float) -> void:
 		return
 
 	if Input.is_action_just_released("interact"):
+		var released_target: Node = _interaction_target
+		if released_target.has_method("interaction_hold_progress"):
+			released_target.call("interaction_hold_progress", self, 0.0)
 		_reset_interaction_hold()
 		return
 
