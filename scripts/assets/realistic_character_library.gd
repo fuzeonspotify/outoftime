@@ -30,6 +30,11 @@ func get_player_character_prototype() -> Node3D:
 	return _player_character_prototype
 
 
+func get_skeleton_head_prototype() -> Node3D:
+	# Compatibility for stale cached scenes from the retired head-only pass.
+	return _player_character_prototype
+
+
 func get_ghost_woman_prototype() -> Node3D:
 	return _ghost_woman_prototype
 
