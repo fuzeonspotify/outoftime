@@ -4,7 +4,7 @@ signal progress_changed(progress: float, status: String)
 signal preload_completed(used_fallbacks: bool)
 
 const LEVEL_LOADER_SCRIPT: Script = preload("res://scripts/world/kenney_level_expansion.gd")
-const CAR_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/kenney_car_library.gd")
+const CAR_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/custom_porsche_car_library.gd")
 const CHARACTER_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/realistic_character_library.gd")
 
 const SCENE_PATHS: Array[String] = [
