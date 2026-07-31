@@ -28,6 +28,7 @@ func _on_nightclub_entered(player: Node) -> void:
 	_transition_started = true
 	if player.has_method("set_objective"):
 		player.call("set_objective", "Enter the ruined nightclub through the void.")
+	MusicDirector.stop_music(0.15)
 	SFXDirector.stop_environment(0.55)
 	await get_tree().create_timer(0.65).timeout
 	get_tree().change_scene_to_file(NIGHTCLUB_SCENE_PATH)
