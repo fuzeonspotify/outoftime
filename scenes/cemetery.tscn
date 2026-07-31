@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3]
+[gd_scene load_steps=13 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/cemetery.gd" id="1_cemetery"]
 [ext_resource type="Script" path="res://scripts/world/cemetery_memorial_alignment.gd" id="2_memorial"]
@@ -11,6 +11,7 @@
 [ext_resource type="Script" path="res://scripts/world/kenney_level_expansion.gd" id="9_kenney"]
 [ext_resource type="Script" path="res://scripts/ui/scene_ui_polish.gd" id="10_ui"]
 [ext_resource type="Script" path="res://scripts/world/interaction_release_polish.gd" id="11_interactions"]
+[ext_resource type="Script" path="res://scripts/dialogue/cemetery_dialogue_integration.gd" id="12_dialogue"]
 
 [node name="Cemetery" type="Node3D"]
 script = ExtResource("1_cemetery")
@@ -44,3 +45,6 @@ script = ExtResource("10_ui")
 
 [node name="InteractionReleasePolish" type="Node" parent="."]
 script = ExtResource("11_interactions")
+
+[node name="CemeteryDialogueIntegration" type="Node" parent="."]
+script = ExtResource("12_dialogue")
