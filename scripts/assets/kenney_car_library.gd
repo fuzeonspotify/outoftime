@@ -33,7 +33,7 @@ func prepare() -> bool:
 	if _selected_model_path.is_empty():
 		return false
 
-	_prototype = _load_glb_prototype(_selected_model_path)
+	_prototype = _load_model_prototype(_selected_model_path)
 	if _prototype == null:
 		return false
 
@@ -102,7 +102,7 @@ func _extract_archive() -> bool:
 		if normalized_path.ends_with("/") or normalized_path.contains(".."):
 			continue
 		var lower_path: String = normalized_path.to_lower()
-		if not lower_path.ends_with(".glb"):
+		if not _should_extract_file(lower_path):
 			continue
 
 		var destination_path: String = MODELS_ROOT.path_join(normalized_path)
@@ -117,13 +117,26 @@ func _extract_archive() -> bool:
 			continue
 		output_file.store_buffer(bytes)
 		output_file.close()
-		extracted_models += 1
+		if lower_path.ends_with(".glb") or lower_path.ends_with(".gltf"):
+			extracted_models += 1
 		processed_files += 1
 		if processed_files % EXTRACTION_BATCH_SIZE == 0:
 			await get_tree().process_frame
 
 	reader.close()
 	return extracted_models > 0
+
+
+func _should_extract_file(lower_path: String) -> bool:
+	return (
+		lower_path.ends_with(".glb")
+		or lower_path.ends_with(".gltf")
+		or lower_path.ends_with(".bin")
+		or lower_path.ends_with(".png")
+		or lower_path.ends_with(".jpg")
+		or lower_path.ends_with(".jpeg")
+		or lower_path.ends_with(".webp")
+	)
 
 
 func _scan_model_paths() -> Array[String]:
@@ -143,8 +156,10 @@ func _scan_directory(directory_path: String, results: Array[String]) -> void:
 		var entry_path: String = directory_path.path_join(entry_name)
 		if directory.current_is_dir():
 			_scan_directory(entry_path, results)
-		elif entry_name.to_lower().ends_with(".glb"):
-			results.append(entry_path)
+		else:
+			var lower_name: String = entry_name.to_lower()
+			if lower_name.ends_with(".glb") or lower_name.ends_with(".gltf"):
+				results.append(entry_path)
 		entry_name = directory.get_next()
 	directory.list_dir_end()
 
@@ -168,13 +183,15 @@ func _choose_car_model(model_paths: Array[String]) -> String:
 				score += 120 - term_index * 14
 		if file_name.contains("sedan-sports") or file_name.contains("sports-sedan"):
 			score += 180
+		if file_name.ends_with(".glb"):
+			score += 8
 		if score > best_score:
 			best_score = score
 			best_path = model_path
 	return best_path
 
 
-func _load_glb_prototype(model_path: String) -> Node3D:
+func _load_model_prototype(model_path: String) -> Node3D:
 	var document: GLTFDocument = GLTFDocument.new()
 	var state: GLTFState = GLTFState.new()
 	var import_error: Error = document.append_from_file(
