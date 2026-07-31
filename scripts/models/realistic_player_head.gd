@@ -32,7 +32,7 @@ func _install_realistic_head() -> void:
 	model_root.add_child(realistic_skull)
 	_normalize_skull(realistic_skull)
 	_tune_skull_materials(realistic_skull)
-	_add_eye_glow(realistic_skull)
+	_add_eye_glow(model_root)
 
 
 func _normalize_skull(skull_root: Node3D) -> void:
@@ -85,7 +85,7 @@ func _tune_skull_materials(model_root: Node3D) -> void:
 			mesh_instance.set_surface_override_material(surface_index, tuned)
 
 
-func _add_eye_glow(skull_root: Node3D) -> void:
+func _add_eye_glow(model_root: Node3D) -> void:
 	var glow_material: StandardMaterial3D = StandardMaterial3D.new()
 	glow_material.albedo_color = Color("866dff")
 	glow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -94,11 +94,11 @@ func _add_eye_glow(skull_root: Node3D) -> void:
 	glow_material.emission_energy_multiplier = 2.2
 	for side: float in [-1.0, 1.0]:
 		var eye_mesh: SphereMesh = SphereMesh.new()
-		eye_mesh.radius = 0.032
-		eye_mesh.height = 0.055
+		eye_mesh.radius = 0.030
+		eye_mesh.height = 0.052
 		var eye: MeshInstance3D = MeshInstance3D.new()
 		eye.name = "RealisticEyeGlow"
 		eye.mesh = eye_mesh
-		eye.position = Vector3(side * 0.105, 0.035, -0.275)
+		eye.position = Vector3(side * 0.105, 1.74, -0.285)
 		eye.material_override = glow_material
-		skull_root.add_child(eye)
+		model_root.add_child(eye)
