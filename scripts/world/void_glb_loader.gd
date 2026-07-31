@@ -4,6 +4,36 @@ const VERSIONED_CACHE_ROOT: String = "user://kenney_void_assets_v2"
 const ZIP_CACHE_ROOT: String = "user://kenney_void_assets"
 
 
+func _build_inversion_station_ceiling() -> void:
+	var wall_positions: Array[Vector3] = [
+		Vector3(-7.0, 14.2, -5.0), Vector3(7.0, 14.2, -14.0),
+		Vector3(-7.0, 14.2, -24.0), Vector3(7.0, 14.2, -34.0)
+	]
+	var empty_excludes: Array[String] = []
+	for index: int in range(wall_positions.size()):
+		var includes: Array[String] = []
+		if index % 2 == 0:
+			includes.append("wall")
+			includes.append("window")
+		else:
+			includes.append("wall")
+			includes.append("pillar")
+		_place_keyword_model(
+			"station", includes, empty_excludes,
+			wall_positions[index], Vector3(180.0, float(index) * 90.0, 0.0), Vector3(4.5, 4.5, 4.5),
+			Color("604c73") if index % 2 == 0 else Color("4f4569"),
+			"InversionStationPart%d" % index, float(index - 2) * 0.25, 0.0
+		)
+
+	var stair_includes: Array[String] = []
+	stair_includes.append("stairs")
+	_place_keyword_model(
+		"station", stair_includes, empty_excludes,
+		Vector3(0.0, 13.8, -20.0), Vector3(180.0, 0.0, 0.0), Vector3(4.0, 4.0, 4.0),
+		Color("654e76"), "InversionStairs", 0.0, 0.0
+	)
+
+
 func _start_loading() -> void:
 	_root = get_parent() as Node3D
 	if _root == null or str(_root.name) != "AfterlifeVoid":
