@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/cemetery.gd" id="1_cemetery"]
 [ext_resource type="Script" path="res://scripts/world/runtime_fixes.gd" id="2_fixes"]
 [ext_resource type="Script" path="res://scripts/story/prologue_director.gd" id="3_director"]
 [ext_resource type="Script" path="res://scripts/world/cemetery_audio.gd" id="4_audio"]
+[ext_resource type="Script" path="res://scripts/world/environment_art_pass.gd" id="5_art"]
 
 [node name="Cemetery" type="Node3D"]
 script = ExtResource("1_cemetery")
@@ -16,3 +17,6 @@ script = ExtResource("3_director")
 
 [node name="CemeteryAudio" type="Node" parent="."]
 script = ExtResource("4_audio")
+
+[node name="EnvironmentArtPass" type="Node" parent="."]
+script = ExtResource("5_art")
