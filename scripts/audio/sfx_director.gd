@@ -5,13 +5,18 @@ const ONE_SHOT_POOL_SIZE: int = 6
 
 var _ambience_player: AudioStreamPlayer
 var _detail_player: AudioStreamPlayer
+var _music_bed_player: AudioStreamPlayer
 var _one_shot_players: Array[AudioStreamPlayer] = []
 var _one_shot_index: int = 0
 var _current_environment: StringName = &""
 
 var _wind_stream: AudioStreamWAV
 var _lantern_stream: AudioStreamWAV
+var _cemetery_music_stream: AudioStreamWAV
 var _engine_stream: AudioStreamWAV
+var _city_stream: AudioStreamWAV
+var _city_electric_stream: AudioStreamWAV
+var _city_siren_stream: AudioStreamWAV
 var _footstep_stream: AudioStreamWAV
 var _interaction_stream: AudioStreamWAV
 var _reveal_stream: AudioStreamWAV
@@ -30,6 +35,7 @@ func _ready() -> void:
 	_rng.seed = 904211
 	_ambience_player = _create_player("EnvironmentAmbience", 0.22)
 	_detail_player = _create_player("EnvironmentDetail", 0.13)
+	_music_bed_player = _create_player("EnvironmentMusicBed", 0.0)
 
 	for index: int in range(ONE_SHOT_POOL_SIZE):
 		var player: AudioStreamPlayer = _create_player("SFXPlayer%d" % (index + 1), 0.35)
@@ -37,7 +43,11 @@ func _ready() -> void:
 
 	_wind_stream = _build_wind_stream()
 	_lantern_stream = _build_lantern_stream()
+	_cemetery_music_stream = _build_cemetery_music_stream()
 	_engine_stream = _build_engine_stream()
+	_city_stream = _build_city_stream()
+	_city_electric_stream = _build_city_electric_stream()
+	_city_siren_stream = _build_city_siren_stream()
 	_footstep_stream = _build_footstep_stream()
 	_interaction_stream = _build_chime_stream(620.0, 930.0, 0.38)
 	_reveal_stream = _build_reveal_stream()
@@ -53,11 +63,12 @@ func _process(delta: float) -> void:
 
 
 func start_cemetery_ambience() -> void:
-	if _current_environment == &"cemetery" and _ambience_player.playing:
+	if _current_environment == &"cemetery" and _ambience_player.playing and _music_bed_player.playing:
 		return
 	_current_environment = &"cemetery"
-	_start_loop(_ambience_player, _wind_stream, 0.22)
-	_start_loop(_detail_player, _lantern_stream, 0.11)
+	_start_loop(_ambience_player, _wind_stream, 0.20)
+	_start_loop(_detail_player, _lantern_stream, 0.10)
+	_start_loop(_music_bed_player, _cemetery_music_stream, 0.085)
 	_environment_detail_timer = _rng.randf_range(5.0, 10.0)
 
 
@@ -67,12 +78,24 @@ func start_pontiac_ambience() -> void:
 	_current_environment = &"pontiac"
 	_start_loop(_ambience_player, _engine_stream, 0.18)
 	_detail_player.stop()
+	_music_bed_player.stop()
+
+
+func start_city_ambience() -> void:
+	if _current_environment == &"city" and _ambience_player.playing:
+		return
+	_current_environment = &"city"
+	_start_loop(_ambience_player, _city_stream, 0.18)
+	_start_loop(_detail_player, _city_electric_stream, 0.075)
+	_music_bed_player.stop()
+	_environment_detail_timer = _rng.randf_range(8.0, 15.0)
 
 
 func stop_environment(fade_seconds: float = 0.5) -> void:
 	_current_environment = &""
 	_fade_out_player(_ambience_player, fade_seconds)
 	_fade_out_player(_detail_player, fade_seconds)
+	_fade_out_player(_music_bed_player, fade_seconds)
 
 
 func play_footstep(intensity: float = 0.5) -> void:
@@ -137,13 +160,18 @@ func _update_player_sfx(delta: float) -> void:
 
 
 func _update_environment_details(delta: float) -> void:
-	if _current_environment != &"cemetery":
+	if _current_environment != &"cemetery" and _current_environment != &"city":
 		return
 	_environment_detail_timer -= delta
 	if _environment_detail_timer > 0.0:
 		return
-	_play_one_shot(_creak_stream, 0.11, _rng.randf_range(0.82, 1.12))
-	_environment_detail_timer = _rng.randf_range(6.0, 14.0)
+
+	if _current_environment == &"cemetery":
+		_play_one_shot(_creak_stream, 0.11, _rng.randf_range(0.82, 1.12))
+		_environment_detail_timer = _rng.randf_range(6.0, 14.0)
+	else:
+		_play_one_shot(_city_siren_stream, 0.075, _rng.randf_range(0.90, 1.05))
+		_environment_detail_timer = _rng.randf_range(11.0, 22.0)
 
 
 func _create_player(player_name: String, initial_volume: float) -> AudioStreamPlayer:
@@ -216,6 +244,28 @@ func _build_lantern_stream() -> AudioStreamWAV:
 	return _make_wav(samples, true)
 
 
+func _build_cemetery_music_stream() -> AudioStreamWAV:
+	var duration: float = 16.0
+	var sample_count: int = int(duration * float(SAMPLE_RATE))
+	var samples: PackedFloat32Array = PackedFloat32Array()
+	samples.resize(sample_count)
+	var notes: Array[float] = [55.0, 110.0, 130.81, 164.81, 220.0]
+	for index: int in range(sample_count):
+		var time: float = float(index) / float(SAMPLE_RATE)
+		var cycle: float = time / duration
+		var breath: float = 0.45 + 0.55 * pow(sin(PI * cycle), 2.0)
+		var movement: float = 0.82 + 0.18 * sin(TAU * 0.0625 * time)
+		var sample: float = 0.0
+		for note_index: int in range(notes.size()):
+			var note_volume: float = 0.050 / float(note_index + 1)
+			var phase_offset: float = float(note_index) * 0.73
+			sample += sin(TAU * notes[note_index] * time + phase_offset) * note_volume
+			sample += sin(TAU * notes[note_index] * 0.5 * time + phase_offset) * note_volume * 0.35
+		var shimmer: float = sin(TAU * 392.0 * time) * (0.004 + 0.003 * sin(TAU * 0.125 * time))
+		samples[index] = (sample * breath * movement) + shimmer
+	return _make_wav(samples, true)
+
+
 func _build_engine_stream() -> AudioStreamWAV:
 	var duration: float = 2.0
 	var sample_count: int = int(duration * float(SAMPLE_RATE))
@@ -228,6 +278,52 @@ func _build_engine_stream() -> AudioStreamWAV:
 		var road: float = sin(TAU * 108.0 * time) * 0.025
 		samples[index] = pulse + harmonic + road
 	return _make_wav(samples, true)
+
+
+func _build_city_stream() -> AudioStreamWAV:
+	var duration: float = 6.0
+	var sample_count: int = int(duration * float(SAMPLE_RATE))
+	var samples: PackedFloat32Array = PackedFloat32Array()
+	samples.resize(sample_count)
+	for index: int in range(sample_count):
+		var time: float = float(index) / float(SAMPLE_RATE)
+		var transformer: float = sin(TAU * 50.0 * time) * 0.07
+		var harmonic: float = sin(TAU * 100.0 * time) * 0.025
+		var distant_air: float = sin(TAU * 31.0 * time + sin(TAU * 0.17 * time)) * 0.035
+		var pulse: float = sin(TAU * 0.18 * time) * 0.018
+		samples[index] = transformer + harmonic + distant_air + pulse
+	return _make_wav(samples, true)
+
+
+func _build_city_electric_stream() -> AudioStreamWAV:
+	var duration: float = 3.0
+	var sample_count: int = int(duration * float(SAMPLE_RATE))
+	var samples: PackedFloat32Array = PackedFloat32Array()
+	samples.resize(sample_count)
+	var pulse_times: Array[float] = [0.33, 0.91, 1.72, 2.42]
+	for index: int in range(sample_count):
+		var time: float = float(index) / float(SAMPLE_RATE)
+		var sample: float = sin(TAU * 118.0 * time) * 0.012
+		for pulse_time: float in pulse_times:
+			var age: float = time - pulse_time
+			if age >= 0.0 and age < 0.11:
+				sample += sin(TAU * 1720.0 * age) * exp(-age * 38.0) * 0.11
+		samples[index] = sample
+	return _make_wav(samples, true)
+
+
+func _build_city_siren_stream() -> AudioStreamWAV:
+	var duration: float = 3.5
+	var sample_count: int = int(duration * float(SAMPLE_RATE))
+	var samples: PackedFloat32Array = PackedFloat32Array()
+	samples.resize(sample_count)
+	for index: int in range(sample_count):
+		var time: float = float(index) / float(SAMPLE_RATE)
+		var progress: float = time / duration
+		var envelope: float = pow(sin(progress * PI), 2.0)
+		var sweep: float = 420.0 + sin(TAU * 0.42 * time) * 105.0
+		samples[index] = sin(TAU * sweep * time) * envelope * 0.13
+	return _make_wav(samples, false)
 
 
 func _build_footstep_stream() -> AudioStreamWAV:
