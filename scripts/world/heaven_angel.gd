@@ -12,8 +12,6 @@ var _right_wing: Node3D
 var _halo: MeshInstance3D
 var _left_horn: MeshInstance3D
 var _right_horn: MeshInstance3D
-var _left_eye: MeshInstance3D
-var _right_eye: MeshInstance3D
 
 var _robe_material: StandardMaterial3D
 var _skin_material: StandardMaterial3D
@@ -149,8 +147,8 @@ func _build_visual() -> void:
 	var eye_mesh: SphereMesh = SphereMesh.new()
 	eye_mesh.radius = 0.045
 	eye_mesh.height = 0.085
-	_left_eye = _add_mesh(_visual_root, eye_mesh, Vector3(-0.10, 2.34, -0.255), _eye_material)
-	_right_eye = _add_mesh(_visual_root, eye_mesh, Vector3(0.10, 2.34, -0.255), _eye_material)
+	_add_mesh(_visual_root, eye_mesh, Vector3(-0.10, 2.34, -0.255), _eye_material)
+	_add_mesh(_visual_root, eye_mesh, Vector3(0.10, 2.34, -0.255), _eye_material)
 
 
 func _build_wing(side: float) -> Node3D:
