@@ -88,10 +88,15 @@ func get_car_model_name() -> String:
 	return str(_car_library.call("get_selected_model_name"))
 
 
-func get_skeleton_head_prototype() -> Node3D:
+func get_player_character_prototype() -> Node3D:
 	if _character_library == null:
 		return null
-	return _character_library.call("get_skeleton_head_prototype") as Node3D
+	return _character_library.call("get_player_character_prototype") as Node3D
+
+
+func get_skeleton_head_prototype() -> Node3D:
+	# Compatibility for stale scenes from the retired head-only pass.
+	return get_player_character_prototype()
 
 
 func get_ghost_woman_prototype() -> Node3D:
@@ -166,14 +171,14 @@ func _prepare_audio() -> bool:
 
 
 func _prepare_character_assets() -> bool:
-	_update_progress(0.32, "PREPARING CHARACTER MODELS")
+	_update_progress(0.32, "PREPARING COMPLETE CHARACTER RIGS")
 	if _character_library == null or not _character_library.has_method("prepare"):
 		return false
 	var prepared_variant: Variant = await _character_library.call("prepare")
 	var prepared: bool = bool(prepared_variant)
 	_update_progress(
 		0.43,
-		"CHARACTER MODELS READY" if prepared else "CHARACTER FALLBACKS READY"
+		"COMPLETE CHARACTER RIGS READY" if prepared else "CHARACTER FALLBACKS READY"
 	)
 	await get_tree().process_frame
 	return prepared
