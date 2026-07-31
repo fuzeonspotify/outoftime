@@ -161,7 +161,7 @@ func _play_crash_sequence(failed: bool) -> void:
 	var approach_tween: Tween = create_tween().set_parallel(true)
 	approach_tween.tween_property(_car, "position", approach_position, 1.55).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_IN)
 	approach_tween.tween_property(_car, "rotation_degrees:z", -9.0, 0.75).set_trans(Tween.TRANS_QUAD)
-	approach_tween.tween_property(_crash_rig, "global_position", _car.global_position + Vector3(-8.5, 2.4, 2.0), 1.0).set_trans(Tween.TRANS_QUINT)
+	approach_tween.tween_property(_crash_rig, "global_position", approach_position + Vector3(-8.5, 2.4, 7.0), 1.0).set_trans(Tween.TRANS_QUINT)
 	approach_tween.tween_property(_crash_rig, "rotation_degrees", Vector3(-7.0, -68.0, 0.0), 1.0).set_trans(Tween.TRANS_QUINT)
 	await get_tree().create_timer(1.05).timeout
 
@@ -220,7 +220,7 @@ func _build_crash_camera() -> void:
 func _build_crash_set() -> Node3D:
 	var root: Node3D = Node3D.new()
 	root.name = "BridgeCrashSet"
-	root.position = _car.position + Vector3(0.0, 0.0, -44.0)
+	root.position = _car.position + Vector3(0.0, 0.0, -35.0)
 	add_child(root)
 	_add_box(root, Vector3(0.0, -0.02, 0.0), Vector3(12.0, 0.16, 18.0), Color("161321"))
 	_add_box(root, Vector3(0.0, -0.12, -12.0), Vector3(12.0, 0.10, 8.0), Color("010003"))
