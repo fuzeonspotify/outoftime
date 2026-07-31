@@ -9,13 +9,16 @@ const MUSIC_VOLUME_LINEAR: float = 0.30
 var _cues: Dictionary = {}
 var _players: Array[AudioStreamPlayer] = []
 var _active_index: int = 0
+var _dialogue_ducked: bool = false
 
 
 func _ready() -> void:
+	_ensure_music_bus()
 	for index: int in range(2):
 		var player: AudioStreamPlayer = AudioStreamPlayer.new()
 		player.name = "MusicPlayer%d" % (index + 1)
 		player.volume_linear = 0.0
+		player.bus = "Music"
 		add_child(player)
 		_players.append(player)
 	_load_cues()
@@ -68,9 +71,10 @@ func play_cue(cue_id: String, fade_seconds: float = 1.2, start_offset: float = 0
 	next_player.play(maxf(0.0, start_offset))
 
 	var duration: float = maxf(0.05, fade_seconds)
+	var target_volume: float = MUSIC_VOLUME_LINEAR * (0.42 if _dialogue_ducked else 1.0)
 	var tween: Tween = create_tween().set_parallel(true)
 	tween.tween_property(previous_player, "volume_linear", 0.0, duration)
-	tween.tween_property(next_player, "volume_linear", MUSIC_VOLUME_LINEAR, duration)
+	tween.tween_property(next_player, "volume_linear", target_volume, duration)
 	await tween.finished
 
 	previous_player.stop()
@@ -98,6 +102,15 @@ func stop_music(fade_seconds: float = 1.0) -> void:
 		player.stop()
 
 
+func duck_for_dialogue(enabled: bool) -> void:
+	_dialogue_ducked = enabled
+	var target_volume: float = MUSIC_VOLUME_LINEAR * (0.42 if enabled else 1.0)
+	var tween: Tween = create_tween().set_parallel(true)
+	for player: AudioStreamPlayer in _players:
+		if player.playing:
+			tween.tween_property(player, "volume_linear", target_volume, 0.35)
+
+
 func get_cue(cue_id: String) -> Dictionary:
 	if not _cues.has(cue_id):
 		return {}
@@ -109,6 +122,15 @@ func has_audio(cue_id: String) -> bool:
 	if cue.is_empty():
 		return false
 	return ResourceLoader.exists(str(cue.get("path", "")))
+
+
+func _ensure_music_bus() -> void:
+	if AudioServer.get_bus_index("Music") >= 0:
+		return
+	AudioServer.add_bus()
+	var bus_index: int = AudioServer.get_bus_count() - 1
+	AudioServer.set_bus_name(bus_index, "Music")
+	AudioServer.set_bus_send(bus_index, "Master")
 
 
 func _should_suppress_cue(cue_id: String) -> bool:
