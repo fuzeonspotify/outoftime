@@ -64,7 +64,6 @@ func _on_gate_activated(player: Node) -> void:
 	if _purified:
 		super._on_gate_activated(player)
 		return
-	# Live hold progress owns the first attempt and interrupts it at 50%.
 	if _live_hold_progress_enabled:
 		return
 	_trigger_halfway_attack(player)
@@ -203,10 +202,16 @@ func _start_gate_encounter(player: Node) -> void:
 		light_punch.tween_property(_scare_fill_light, "light_energy", 1.05, 0.08)
 		light_punch.tween_property(_scare_fill_light, "light_energy", 0.72, JUMPSCARE_HOLD_SECONDS)
 	_scare_title.text = "SHE IS IN YOUR FACE"
-	_scare_instruction.text = "BREAK HER GRIP"
+	_scare_instruction.text = "ESCAPE"
 	await get_tree().create_timer(ANGEL_LUNGE_SECONDS * 0.24).timeout
 	await get_tree().create_timer(JUMPSCARE_HOLD_SECONDS).timeout
 	_begin_qte()
+
+
+func _begin_qte() -> void:
+	super._begin_qte()
+	_scare_title.text = "ESCAPE"
+	_scare_instruction.text = "PRESS THE SEQUENCE TO GET AWAY — THREE CHANCES"
 
 
 func _install_scare_fill_light() -> void:
