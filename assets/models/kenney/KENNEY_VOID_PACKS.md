@@ -27,7 +27,13 @@ The expanded void chapter loads selected GLB models from two official Kenney ass
 
 ## Runtime behavior
 
-`scripts/world/void_glb_expansion.gd` downloads each official ZIP once, extracts the GLB files, and caches them under:
+`scripts/world/void_glb_expansion_v2.gd` downloads each official ZIP once, preserves the archive folder structure, and extracts GLB files together with their referenced textures.
+
+The texture-aware cache is stored under:
+
+`user://kenney_void_assets_v2`
+
+Downloaded ZIP archives are kept under:
 
 `user://kenney_void_assets`
 
