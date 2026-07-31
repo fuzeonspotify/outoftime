@@ -45,13 +45,17 @@ func _install_on_woman(woman: Node3D, prototype: Node3D) -> void:
 	if realistic_model == null:
 		return
 	_hide_existing_visuals(woman)
-	realistic_model.name = "RealisticGhostWoman"
-	woman.add_child(realistic_model)
+	var presentation_root: Node3D = Node3D.new()
+	presentation_root.name = "RealisticGhostWoman"
+	presentation_root.rotation_degrees.y = 180.0
+	woman.add_child(presentation_root)
+	realistic_model.name = "CorsetMannequinBody"
+	presentation_root.add_child(realistic_model)
 	_normalize_model(realistic_model)
 	_apply_spectral_materials(realistic_model)
-	_add_face_and_hair(realistic_model)
+	_add_face_and_hair(presentation_root)
 	_add_spectral_light(woman)
-	_installed_models.append(realistic_model)
+	_installed_models.append(presentation_root)
 
 
 func _hide_existing_visuals(woman: Node3D) -> void:
@@ -74,7 +78,6 @@ func _normalize_model(model_root: Node3D) -> void:
 		-bounds.position.y * scale_factor,
 		-center.z * scale_factor
 	)
-	model_root.rotation_degrees.y = 180.0
 
 
 func _calculate_local_bounds(model_root: Node3D) -> AABB:
@@ -118,11 +121,11 @@ func _apply_spectral_materials(model_root: Node3D) -> void:
 			mesh_instance.set_surface_override_material(surface_index, spectral)
 
 
-func _add_face_and_hair(model_root: Node3D) -> void:
+func _add_face_and_hair(presentation_root: Node3D) -> void:
 	var face_root: Node3D = Node3D.new()
 	face_root.name = "SpectralFace"
 	face_root.position = Vector3(0.0, 2.25, -0.02)
-	model_root.add_child(face_root)
+	presentation_root.add_child(face_root)
 
 	var skin: StandardMaterial3D = _make_spectral_material(Color("c3bac7"), 0.76, 0.28)
 	var hair: StandardMaterial3D = _make_spectral_material(Color("17131d"), 0.92, 0.18)
