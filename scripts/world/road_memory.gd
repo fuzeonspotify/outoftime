@@ -1,6 +1,7 @@
 extends Node3D
 
 const MAIN_SCENE_PATH: String = "res://scenes/main.tscn"
+const CITY_SCENE_PATH: String = "res://scenes/afterlife_city.tscn"
 const ROAD_SEGMENT_LENGTH: float = 14.0
 const ROAD_SEGMENT_COUNT: int = 18
 const DRIVE_SPEED: float = 17.0
@@ -200,21 +201,33 @@ func _show_memory_end() -> void:
 	stack.add_child(heading)
 
 	var note: Label = Label.new()
-	note.text = "The road ends here for now. The next memory will lead into the ruined city."
+	note.text = "The memory road opens into a city that should not exist."
 	note.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	note.add_theme_font_size_override("font_size", 18)
 	note.add_theme_color_override("font_color", Color("a6aec5"))
 	stack.add_child(note)
 
+	var continue_button: Button = Button.new()
+	continue_button.text = "ENTER THE CITY"
+	continue_button.custom_minimum_size = Vector2(300.0, 52.0)
+	continue_button.pressed.connect(_continue_to_city)
+	stack.add_child(continue_button)
+
 	var return_button: Button = Button.new()
 	return_button.text = "RETURN TO TITLE"
-	return_button.custom_minimum_size = Vector2(300.0, 52.0)
+	return_button.custom_minimum_size = Vector2(300.0, 44.0)
 	return_button.pressed.connect(_return_to_title)
 	stack.add_child(return_button)
 
 
+func _continue_to_city() -> void:
+	SFXDirector.stop_environment(0.6)
+	get_tree().change_scene_to_file(CITY_SCENE_PATH)
+
+
 func _return_to_title() -> void:
 	MusicDirector.stop_music(1.2)
+	SFXDirector.stop_environment(0.6)
 	get_tree().change_scene_to_file(MAIN_SCENE_PATH)
 
 
