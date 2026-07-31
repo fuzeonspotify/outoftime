@@ -15,6 +15,17 @@ var _void_jump_buffer_remaining: float = 0.0
 var _void_floor_grace_remaining: float = 0.0
 var _void_airborne_time: float = 0.0
 var _void_ground_state_initialized: bool = false
+var _cinematic_mode: bool = false
+
+
+func set_cinematic_mode(enabled: bool) -> void:
+	_cinematic_mode = enabled
+	if enabled:
+		velocity = Vector3.ZERO
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		clear_interaction_target(_interaction_target)
+	else:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
 func set_void_jump_mode(enabled: bool) -> void:
@@ -41,6 +52,8 @@ func set_void_gravity_state(state: StringName) -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if _cinematic_mode:
+		return
 	if event.is_action_pressed("ui_cancel"):
 		_set_pause_open(not _pause_open)
 		get_viewport().set_input_as_handled()
@@ -64,6 +77,9 @@ func _unhandled_input(_event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if _cinematic_mode:
+		velocity = Vector3.ZERO
+		return
 	if not _void_jump_mode:
 		super._physics_process(delta)
 		return
