@@ -1,6 +1,7 @@
 extends Area3D
 
 signal activated(player: Node)
+signal hold_progressed(player: Node, progress: float)
 
 @export var prompt_text: String = "Inspect"
 @export var interaction_title: String = ""
@@ -62,6 +63,12 @@ func _process(delta: float) -> void:
 			move_toward(current_color.a, target_alpha, delta * 2.8)
 		)
 		_marker_material.emission_energy_multiplier = 2.4 if nearby else 1.15
+
+
+func interaction_hold_progress(player: Node, progress: float) -> void:
+	if one_shot and _used:
+		return
+	hold_progressed.emit(player, clampf(progress, 0.0, 1.0))
 
 
 func interact(player: Node) -> void:
