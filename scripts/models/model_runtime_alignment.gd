@@ -42,6 +42,10 @@ func _align_pontiac(road_root: Node3D) -> void:
 	var pontiac: Node3D = road_root.get_node_or_null("SpectralPontiac") as Node3D
 	if pontiac == null:
 		return
+	var imported_model: Node3D = pontiac.get_node_or_null("KenneyCC0Car") as Node3D
+	if imported_model != null:
+		# The imported car faces positive Z, while the bridge drives toward negative Z.
+		imported_model.rotation_degrees.y = 180.0
 	var fallback_model: Node3D = pontiac.get_node_or_null("ModeledPontiacFallback") as Node3D
 	if fallback_model != null:
 		fallback_model.position.y = -0.22
