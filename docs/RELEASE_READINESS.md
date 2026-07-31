@@ -1,237 +1,257 @@
 # Out of Time — Release Readiness Audit
 
-This document records the repository cleanup, player-facing polish systems and final manual test matrix for the current five-chapter build.
+This document records the active five-chapter build, its runtime systems and the manual test matrix required before distribution.
 
 ## Active scene flow
 
 1. `scenes/main.tscn`
 2. `scenes/cemetery.tscn`
 3. `scenes/road_memory.tscn`
-4. `scenes/afterlife_city.tscn` — retained as a compatibility path; the scene root and content are the Afterlife Void
+4. `scenes/afterlife_city.tscn` — compatibility path retained; active content is the Memory Train
 5. `scenes/ruined_nightclub.tscn`
 6. `scenes/skeleton_chamber.tscn`
 
-Keeping the existing `afterlife_city.tscn` path avoids breaking saved scene references and the Pontiac handoff. No city buildings or city-only loaders remain attached to it.
+The `afterlife_city.tscn` path remains stable so the Pontiac handoff and any saved references do not break. The former gravity void is no longer attached to the active scene.
 
 ## Release UI architecture
 
 - `scripts/ui/ui_style.gd`
-  - shared angular signal-panel, label, button and progress-bar styling
+  - shared angular signal-panel, label, button and progress styling
   - consistent hover, focus and confirmation audio
 - `scripts/ui/main.gd`
-  - public title screen, controls screen and fade transition
+  - title screen, controls screen and fade transition
+- `scripts/ui/main_startup.gd`
+  - startup preparation overlay
+  - Memory Train story copy and chapter listing
 - `scripts/player/third_person_controller.gd`
-  - objective card, chapter identity, interaction prompt, hold progress, narrative messages, crosshair feedback and pause menu
+  - objective card, interaction prompt, narrative messages and pause menu
 - `scripts/ui/memory_hud_effects.gd`
-  - vignette, drifting scanlines, corner framing and chapter signal telemetry
-- `scripts/ui/scene_ui_polish.gd`
-  - consistent styling for chapter-specific HUD labels, end screens, buttons and 3D text
+  - vignette, scanlines, corner framing and chapter telemetry
 - `scripts/world/road_release_polish.gd`
-  - Memory Bridge copy, HUD presentation and pause menu
+  - Pontiac memory HUD and pause presentation
+- `scripts/world/memory_train.gd`
+  - dedicated action HUD, track choice, cinematic bars, damage flash and screen shake
 
 ## Cinematic dialogue architecture
 
 - `data/dialogues.json`
   - branching cemetery and chamber conversations
-  - response tone and outcome data
-  - camera-shot instructions
+  - response tone, outcomes and camera-shot instructions
 - `scripts/dialogue/dialogue_director.gd`
-  - typewriter dialogue and numbered response choices
+  - typewriter dialogue and numbered responses
   - speaker close-ups, player close-ups, two-shots and wide shots
-  - letterbox, scanlines and memory-link presentation
-  - dialogue-specific sound feedback and music ducking
+  - dialogue audio feedback and music ducking
 - `scripts/dialogue/cinematic_player_lock.gd`
-  - freezes movement and exploration input during conversations
-  - hides and restores the exploration HUD safely
+  - freezes exploration movement during conversations
+  - safely hides and restores the HUD and mouse mode
 - `scripts/dialogue/cemetery_dialogue_integration.gd`
-  - replaces the cemetery's former single-line woman interaction
-  - applies trust, doubt or defiance outcomes
+  - trust, doubt and defiance outcomes
 - `scripts/dialogue/chamber_dialogue_integration.gd`
-  - replaces the final single-line confrontation
-  - applies truth, defiance or mercy outcomes
+  - truth, defiance and mercy outcomes
 
-## Release interaction architecture
+## Memory Train architecture
+
+- `scripts/world/memory_train.gd`
+  - automatic forward action with three-lane movement
+  - jumping, obstacle avoidance, integrity and checkpoint rewind
+  - passenger car, track split, roof run and engine overdrive stages
+  - live route selection: follow her or follow yourself
+  - mid-game side-impact, passing-train and roof-transition camera sequences
+  - bridge-collapse jump event
+  - engine control-bank alignment challenges
+  - cinematic nightclub crash transition
+- `scripts/audio/memory_train_audio.gd`
+  - generated sub-rumble, wheel rhythm, wind and metal strain loops
+  - horns, brakes, track switches, electrical sparks and impacts
+  - positional left/right train events for headphones
+  - intensity scaling through the chapter
+- `scripts/world/road_memory_runtime.gd`
+  - rewrites the Pontiac completion screen as an impossible railroad crossing
+  - boards the cached Memory Train scene
+
+The Memory Train cutscenes intentionally leave gameplay processing active. Camera direction changes, shake and set pieces must never block lane or jump input.
+
+## Interaction architecture
 
 - `scripts/world/interactable.gd`
   - configurable action title and context
   - hold-to-interact timing
-  - world-space diamond, ring and guide beam
-  - proximity pulse and color feedback
-  - one-shot and repeatable interaction handling
+  - world-space marker and proximity feedback
+  - one-shot and repeatable interaction behavior
   - narrative response or cinematic-dialogue handoff
 - `scripts/world/interaction_release_polish.gd`
-  - scene-wide configuration for memorials, characters, gravity anchors, power breakers, journals and exits
-  - edited public-facing interaction copy
-  - action-specific hold timing and marker presentation
+  - scene-wide configuration for memorials, characters, breakers, journals and exits
 
 ## Headphone audio architecture
 
 - `scripts/audio/online_audio_library.gd`
-  - asynchronous CC0 pack download and extraction
+  - asynchronous optional CC0 pack preparation
   - runtime OGG and WAV loading
-  - keyword-based cue selection
+  - procedural fallback compatibility
 - `scripts/audio/sfx_director.gd`
-  - separate Music, Ambience, SFX, Dialogue and UI buses
-  - independent ambience and dialogue reverb
+  - Music, Ambience, SFX, Dialogue and UI buses
   - footsteps, jumps, landings, interactions and transition effects
-  - positional environmental detail using `AudioStreamPlayer3D`
-  - procedural fallback sounds when downloaded audio is unavailable
+  - positional environmental details
+- `scripts/audio/memory_train_audio.gd`
+  - train-specific layered and positional audio
 - `scripts/audio/nightclub_spatial_audio.gd`
-  - distant positional metal failures throughout the ruined club
+  - positional metal failures throughout the ruined club
 - `scripts/audio/music_director.gd`
-  - Music bus routing and dialogue ducking
+  - soundtrack caching, long crossfades and dialogue ducking
 
-CC0 sound sources and cache behavior are documented in `assets/audio/CC0_AUDIO_LIBRARY.md`.
+CC0 sources and cache behavior are documented in `assets/audio/CC0_AUDIO_LIBRARY.md`.
 
-## Intentionally retained implementation layers
+## Startup preparation
 
-The following pairs use inheritance intentionally and are not abandoned duplicates:
+`scripts/bootstrap/startup_preloader.gd` now warms:
+
+- all five chapter scenes
+- optional online audio
+- cemetery, road, nightclub and chamber environment models
+
+The former void ZIP download, extraction and GLB warmup have been removed from the active startup path. The Memory Train uses procedural geometry and audio, so it does not need a remote model archive.
+
+## Archived implementation layers
+
+The former void scripts remain in the repository as inactive implementation history:
 
 - `scripts/world/afterlife_void.gd`
-  - complete large-scale void implementation
 - `scripts/world/afterlife_void_release.gd`
-  - release checkpoint and gravity-anchor overrides
 - `scripts/world/void_glb_expansion.gd`
-  - complete Kenney archive download, import and placement implementation
 - `scripts/world/void_glb_loader.gd`
-  - texture-aware recursive extraction and production cache behavior
 
-`scripts/models/octahedron_mesh.gd` remains because the complete base void implementation references its registered mesh class while loading.
-
-## Removed legacy and temporary files
-
-The release pass removed or replaced:
-
-- the procedural city loader and city cleanup scripts
-- the unused city audio wrapper
-- the old city asset document
-- the bridge copy-repair script
-- temporary `_v2` void filenames
-- generic `runtime_fixes`, `nightclub_layout_fix` and `model_alignment_fixes` filenames
-- prototype title-screen status and soundtrack-planning UI
-- single-line character conversations in the cemetery and chamber
-
-Necessary behavior from generic fix scripts was preserved under scoped production names:
-
-- `cemetery_memorial_alignment.gd`
-- `nightclub_balcony_access.gd`
-- `model_runtime_alignment.gd`
+They are not referenced by `scenes/afterlife_city.tscn` or the active startup preloader. They should not initialize during a normal playthrough.
 
 ## Asset behavior
 
-- Kenney model sources and licenses are documented under `assets/models/kenney/`.
-- Kenney sound sources and licenses are documented under `assets/audio/`.
-- Runtime-downloaded assets are cached under `user://`.
-- Procedural geometry and generated audio remain available when a remote archive cannot be downloaded or imported.
+- Kenney model and sound provenance is documented under `assets/`.
+- Runtime-downloaded optional assets are cached under `user://`.
+- Procedural geometry and generated audio remain available offline.
 - Unreleased music files remain excluded from Git.
-- Missing optional music cues do not block gameplay or display developer-facing messages to players.
+- Missing optional music does not block gameplay.
 
 ## Manual release test matrix
 
-Run the full game from `scenes/main.tscn` with a clean `user://` cache and again with a populated cache.
+Run the full game from `scenes/main.tscn` once with a clean `user://` cache and once with populated caches.
 
-### Title screen
+### Title screen and startup
 
+- Verify startup reaches 100% and unlocks Begin Story.
+- Verify the chapter list says Memory Train rather than Void.
 - Verify mouse and keyboard focus on Begin Story, Controls, Back and Quit.
-- Verify every hover/focus produces one restrained UI sound.
-- Verify every press produces one confirmation sound.
 - Verify Controls closes with Back and Escape.
-- Verify Begin Story fades into the cemetery once and cannot be double-triggered.
-- Verify no developer, prototype or missing-audio status appears.
+- Verify Begin Story cannot be double-triggered.
+- Verify no developer-facing download or missing-audio errors appear.
 
 ### Every exploration chapter
 
-- Verify objective card text fits at 1280×720, 1920×1080 and one ultrawide resolution.
-- Verify the memory vignette, scanlines, corner frame and chapter code remain subtle.
-- Verify controls hint fades out without hiding the objective.
-- Verify Escape opens Pause and Resume restores captured mouse input.
-- Verify Restart Chapter reloads cleanly.
-- Verify Return to Title stops chapter audio.
-- Verify interaction prompts appear only for enabled objects.
-- Verify releasing E before completion resets hold progress.
-- Verify one-shot markers disappear after activation.
-- Verify repeatable interactions require E to be released before triggering again.
-- Verify overlapping interaction areas do not leave a stuck prompt.
-- Verify walking, sprinting, jumping and landing produce correctly paced effects.
+- Verify objective cards fit at 1280×720, 1920×1080 and ultrawide.
+- Verify Escape opens Pause and Resume restores mouse capture.
+- Verify Restart Chapter and Return to Title stop chapter audio.
+- Verify interaction prompts, hold progress and one-shot markers.
+- Verify walking, sprinting, jumping and landing audio pacing.
 
 ### Cinematic dialogue
 
-- Verify entering dialogue freezes player movement and hides both exploration HUD layers.
-- Verify the active gameplay camera is restored after every outcome.
-- Verify mouse focus, keyboard focus, Enter/E reveal and response keys 1–4.
-- Verify a response produces one dialogue-choice sound rather than stacked clicks.
-- Verify typewriter ticks remain quiet enough under headphones.
-- Verify music and ambience duck smoothly at dialogue start and restore afterward.
-- Verify every speaker, player, two-shot and wide camera position avoids clipping geometry.
-- Verify text wraps at 1280×720 and ultrawide resolutions.
-- Verify rapidly pressing Enter cannot skip two nodes at once.
+- Verify dialogue freezes exploration movement and hides the HUD.
+- Verify gameplay camera, mouse mode and audio levels restore afterward.
+- Verify Enter/E reveal and response keys 1–4.
+- Verify each response produces one choice sound.
+- Verify every camera angle avoids clipping.
+- Complete every cemetery and chamber outcome.
 
 ### Cemetery
 
-- Inspect the memorial and verify edited narrative copy.
-- Confirm the woman and her marker appear only after the memorial interaction.
-- Confirm the gate remains behind the woman.
-- Complete trust, doubt and defiance conversation routes.
-- Verify each route produces the intended objective after the cinematic ends.
-- Verify the Pontiac cue begins only after the conversation completes.
+- Inspect the memorial and edited narrative copy.
+- Confirm the woman appears only after the memorial.
+- Complete trust, doubt and defiance routes.
+- Verify the Pontiac cue begins after the conversation.
 
-### Memory Bridge
+### Pontiac memory
 
 - Verify A/D steering and mouse-wheel camera control.
-- Verify title and instructions use release copy.
-- Verify memory integrity and distance remain readable during motion.
+- Verify integrity and distance remain readable.
 - Verify failure and completion screens use polished buttons.
-- Verify the completion button says Enter the Void.
-- Verify Pause, Restart, Return to Title and Quit work while driving.
+- Verify the completion screen describes the railroad crossing.
+- Verify the button says Board the Memory Train.
+- Verify boarding fades and changes scene once.
 
-### Void
+### Memory Train — general
 
-- Verify all three anchor markers are initially visible and the portal marker is hidden.
-- Verify low, inverted, near-zero and restored gravity boundaries.
-- Verify every recovery checkpoint returns the player to reachable geometry.
-- Verify anchor hold interactions and force-field feedback.
-- Verify positional void pulses move around the listener rather than playing only in the center.
-- Verify the portal activates only after all three anchors.
-- Test once with an empty Kenney cache and once with cached files.
-- Verify model and sound download failure leaves the procedural route playable.
+- Verify the old void does not appear or begin downloading assets.
+- Verify Rockstar starts with a long fade while train layers begin immediately.
+- Verify A/D changes lanes and Space jumps throughout gameplay camera cuts.
+- Verify damage produces screen shake, impact audio and a visible integrity loss.
+- Verify three losses rewind the current train section without restarting the chapter.
+- Verify headphones clearly place impacts, sparks and metal strain left or right.
+- Verify all UI text remains readable during shake and flashes.
+
+### Memory Train — passenger car
+
+- Verify luggage requires a jump and shadow passengers require lane movement.
+- Verify the side-collision cutscene does not disable controls.
+- Verify the phantom train passes in the correct direction.
+- Verify camera returns to the normal chase position.
+
+### Memory Train — track split
+
+- Verify A selects Follow Her and D selects Follow Yourself.
+- Verify E confirms the highlighted route.
+- Verify the timer safely selects the current route when it reaches zero.
+- Verify route confirmation tilts the train, plays the switch and changes story text.
+- Complete the level once on each route.
+
+### Memory Train — roof
+
+- Verify the roof-transition camera returns control cleanly.
+- Verify signal frames, live cables and roof gaps are avoidable.
+- Verify the passing-train sequence keeps jump and lane input active.
+- Verify the bridge-collapse warning gives enough time to jump.
+- Verify repeated gaps cannot spawn an impossible pattern.
+
+### Memory Train — engine
+
+- Verify all three control-bank prompts appear in order.
+- Verify left, center and right alignment checks use the correct lane.
+- Verify correct alignment plays a stable confirmation.
+- Verify incorrect alignment damages but does not soft-lock the stage.
+- Verify the engine reaches the finale after the third control bank.
+
+### Memory Train — finale
+
+- Verify the nightclub gate approaches during the action camera push.
+- Verify layered horn, sparks, impacts, shake and FOV ramp remain performant.
+- Verify the final flash changes to the preloaded ruined nightclub scene once.
+- Verify Memory Train ambience and Rockstar fade out during the transition.
 
 ### Ruined Club
 
-- Verify all three breaker markers and hold interactions.
-- Verify each breaker uses machinery/power-restoration feedback.
-- Verify distant metal failures appear at different positions under headphones.
-- Verify the balcony access ramp is clear and the upper breaker is reachable.
-- Verify disabled backstage exit has no marker or prompt.
-- Verify the backstage exit activates after all breakers.
-- Verify stability and breaker HUD elements remain readable over lighting pulses.
+- Verify all three breakers and hold interactions.
+- Verify distant metal failures appear at different headphone positions.
+- Verify balcony access and the upper breaker remain reachable.
+- Verify the backstage exit activates only after all breakers.
 
 ### Skeleton Chamber
 
-- Verify all three journal prompts, hold progress, page audio and narrative text.
+- Verify all three journal interactions and page audio.
 - Verify journals cannot be counted twice.
-- Verify the woman interaction remains disabled until all journals are read.
-- Complete truth, defiance and mercy confrontation routes.
-- Verify each route restores the camera and reaches the chapter-end presentation once.
+- Verify the woman remains disabled until all journals are read.
+- Complete truth, defiance and mercy routes.
 
 ### First-run and offline audio
 
 - Delete `user://out_of_time_audio_v1` and launch from the title screen.
-- Verify the UI remains responsive while packs download asynchronously.
-- Verify procedural fallback sounds play before downloads complete.
-- Verify downloaded sounds begin appearing without restarting when packs become ready.
-- Relaunch and confirm cached audio requires no repeated archive download.
-- Disconnect the network, clear the cache and verify the complete game remains playable.
-- Check that no remote failure message appears in player-facing UI.
+- Verify the startup UI remains responsive during optional audio preparation.
+- Relaunch and confirm caches prevent repeated archive work.
+- Disconnect the network, clear the cache and verify the complete story remains playable.
+- Verify Memory Train procedural audio is always available offline.
 
 ## Final build gate
 
-Before distributing the game publicly:
-
-1. Complete the full manual matrix above in an actual Godot build.
+1. Complete the full matrix in an actual Godot build.
 2. Run a clean Windows export outside the editor.
-3. Test with optional music files present and absent.
-4. Test first-run Kenney model and sound downloads on a normal residential connection.
-5. Test the same build offline with empty caches.
-6. Record at least one uninterrupted full playthrough and review every UI, dialogue and camera transition at playback speed.
-7. Review the complete game once on headphones and once on laptop speakers.
-8. Confirm export credits and third-party asset provenance are included wherever the final distribution presents credits.
+3. Test with optional music present and absent.
+4. Test first-run preparation online and offline.
+5. Record one uninterrupted full playthrough.
+6. Review the train once on headphones and once on laptop speakers.
+7. Confirm export credits and third-party asset provenance are present.
