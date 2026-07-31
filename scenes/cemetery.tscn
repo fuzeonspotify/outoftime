@@ -1,6 +1,14 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=4 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/cemetery.gd" id="1_cemetery"]
+[ext_resource type="Script" path="res://scripts/world/runtime_fixes.gd" id="2_fixes"]
+[ext_resource type="Script" path="res://scripts/story/prologue_director.gd" id="3_director"]
 
 [node name="Cemetery" type="Node3D"]
 script = ExtResource("1_cemetery")
+
+[node name="RuntimeFixes" type="Node" parent="."]
+script = ExtResource("2_fixes")
+
+[node name="PrologueDirector" type="Node" parent="."]
+script = ExtResource("3_director")
