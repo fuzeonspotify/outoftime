@@ -9,7 +9,6 @@ const UI_STYLE: Script = preload("res://scripts/ui/ui_style.gd")
 var _dialogues: Dictionary = {}
 var _active: bool = false
 var _conversation_id: String = ""
-var _current_node_id: String = ""
 var _current_node: Dictionary = {}
 var _current_outcome: String = ""
 var _player: Node
@@ -30,7 +29,6 @@ var _speaker_label: Label
 var _body_label: RichTextLabel
 var _choices: VBoxContainer
 var _choice_hint: Label
-var _memory_link_label: Label
 var _scanlines: Array[ColorRect] = []
 var _typing_tween: Tween
 var _text_fully_revealed: bool = false
@@ -96,7 +94,7 @@ func start_conversation(
 	if not (conversation_variant is Dictionary):
 		push_warning("Dialogue conversation not found: %s" % conversation_id)
 		return false
-	var conversation: Dictionary = conversation_variant as Dictionary
+	var conversation: Dictionary = conversation_variant
 	var start_node: String = str(conversation.get("start", ""))
 	if start_node.is_empty():
 		return false
@@ -145,7 +143,7 @@ func _load_dialogues() -> void:
 		return
 	var parsed: Variant = JSON.parse_string(file.get_as_text())
 	if parsed is Dictionary:
-		_dialogues = parsed as Dictionary
+		_dialogues = parsed
 	else:
 		push_error("Dialogue data contains invalid JSON.")
 
@@ -196,9 +194,9 @@ func _build_interface() -> void:
 	upper_status.add_theme_constant_override("separation", 16)
 	_overlay.add_child(upper_status)
 
-	_memory_link_label = UI_STYLE.make_label("MEMORY LINK  //  ESTABLISHED", 12, UI_STYLE.COLOR_ACCENT_COOL)
-	_memory_link_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	upper_status.add_child(_memory_link_label)
+	var memory_link_label: Label = UI_STYLE.make_label("MEMORY LINK  //  ESTABLISHED", 12, UI_STYLE.COLOR_ACCENT_COOL)
+	memory_link_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	upper_status.add_child(memory_link_label)
 
 	var input_hint: Label = UI_STYLE.make_label("ENTER  REVEAL    1—4  RESPOND", 11, UI_STYLE.COLOR_TEXT_DIM)
 	input_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
@@ -288,19 +286,18 @@ func _show_node(node_id: String) -> void:
 	if not (conversation_variant is Dictionary):
 		_finish_conversation()
 		return
-	var conversation: Dictionary = conversation_variant as Dictionary
+	var conversation: Dictionary = conversation_variant
 	var nodes_variant: Variant = conversation.get("nodes")
 	if not (nodes_variant is Dictionary):
 		_finish_conversation()
 		return
-	var nodes: Dictionary = nodes_variant as Dictionary
+	var nodes: Dictionary = nodes_variant
 	var node_variant: Variant = nodes.get(node_id)
 	if not (node_variant is Dictionary):
 		_finish_conversation()
 		return
 
-	_current_node_id = node_id
-	_current_node = node_variant as Dictionary
+	_current_node = node_variant
 	_clear_choices()
 	_text_fully_revealed = false
 	_last_tick_index = -1
@@ -335,7 +332,7 @@ func _reveal_text_immediately() -> void:
 func _current_choices() -> Array:
 	var choices_variant: Variant = _current_node.get("choices", [])
 	if choices_variant is Array:
-		return choices_variant as Array
+		return choices_variant
 	return []
 
 
@@ -347,6 +344,7 @@ func _build_choices_for_current_node() -> void:
 		_choice_hint.text = "THE MEMORY IS WAITING"
 		var end_text: String = "CONTINUE" if _current_node.has("next") else "END CONVERSATION"
 		var continue_button: Button = UI_STYLE.make_button(end_text, true, Vector2(0.0, 42.0))
+		_configure_dialogue_button_audio(continue_button)
 		continue_button.pressed.connect(Callable(self, "_on_continue_pressed"))
 		_choices.add_child(continue_button)
 		_choice_buttons.append(continue_button)
@@ -358,18 +356,28 @@ func _build_choices_for_current_node() -> void:
 		var choice_variant: Variant = node_choices[index]
 		if not (choice_variant is Dictionary):
 			continue
-		var choice: Dictionary = choice_variant as Dictionary
+		var choice: Dictionary = choice_variant
 		var choice_button: Button = UI_STYLE.make_button(
 			"%02d  //  %s" % [index + 1, str(choice.get("text", "..."))],
 			index == 0,
 			Vector2(0.0, 40.0)
 		)
 		choice_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		_configure_dialogue_button_audio(choice_button)
 		choice_button.pressed.connect(Callable(self, "_on_choice_selected").bind(index))
 		_choices.add_child(choice_button)
 		_choice_buttons.append(choice_button)
 	if not _choice_buttons.is_empty():
 		_choice_buttons[0].grab_focus()
+
+
+func _configure_dialogue_button_audio(button: Button) -> void:
+	var generic_confirm: Callable = Callable(SFXDirector, "play_ui_confirm")
+	if button.pressed.is_connected(generic_confirm):
+		button.pressed.disconnect(generic_confirm)
+	var dialogue_confirm: Callable = Callable(SFXDirector, "play_dialogue_choice")
+	if not button.pressed.is_connected(dialogue_confirm):
+		button.pressed.connect(dialogue_confirm)
 
 
 func _clear_choices() -> void:
@@ -388,11 +396,10 @@ func _on_choice_selected(choice_index: int) -> void:
 	var choice_variant: Variant = node_choices[choice_index]
 	if not (choice_variant is Dictionary):
 		return
-	var choice: Dictionary = choice_variant as Dictionary
+	var choice: Dictionary = choice_variant
 	var tone: String = str(choice.get("tone", ""))
 	if not tone.is_empty():
 		_current_outcome = tone
-	SFXDirector.play_dialogue_choice()
 	_pulse_camera()
 	var next_node: String = str(choice.get("next", ""))
 	if next_node.is_empty():
@@ -402,7 +409,6 @@ func _on_choice_selected(choice_index: int) -> void:
 
 
 func _on_continue_pressed() -> void:
-	SFXDirector.play_dialogue_choice()
 	var next_node: String = str(_current_node.get("next", ""))
 	if not next_node.is_empty():
 		_show_node(next_node)
@@ -559,7 +565,6 @@ func _finish_conversation() -> void:
 		_completion_callback.call(finished_outcome)
 
 	_conversation_id = ""
-	_current_node_id = ""
 	_current_node = {}
 	_current_outcome = ""
 	_player = null
