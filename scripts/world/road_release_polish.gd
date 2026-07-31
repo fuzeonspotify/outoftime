@@ -92,7 +92,7 @@ func _build_pause_menu() -> void:
 	_pause_canvas.name = "RoadPauseMenu"
 	_pause_canvas.layer = 100
 	_pause_canvas.process_mode = Node.PROCESS_MODE_ALWAYS
-	scene_root.add_child.call_deferred(_pause_canvas)
+	scene_root.call_deferred("add_child", _pause_canvas)
 	await get_tree().process_frame
 
 	_pause_overlay = Control.new()
