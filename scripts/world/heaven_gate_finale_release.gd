@@ -3,11 +3,11 @@ extends "res://scripts/world/heaven_gate_finale.gd"
 const CINEMATIC_ANGEL_SCRIPT: Script = preload("res://scripts/world/heaven_angel_cinematic.gd")
 const FIRST_GATE_HOLD_SECONDS: float = 5.0
 const ATTACK_TRIGGER_PROGRESS: float = 0.50
-const ANGEL_APPROACH_SECONDS: float = 5.40
-const CAMERA_TO_EYES_SECONDS: float = 1.80
-const FACE_PULL_SECONDS: float = 2.60
-const PRE_GRAB_HOLD_SECONDS: float = 0.85
-const POST_PULL_HOLD_SECONDS: float = 1.05
+const FIRST_PERSON_THROW_SECONDS: float = 0.28
+const TURN_HOLD_SECONDS: float = 0.32
+const ANGEL_WINDUP_SECONDS: float = 0.16
+const ANGEL_LUNGE_SECONDS: float = 0.62
+const JUMPSCARE_HOLD_SECONDS: float = 0.58
 
 var _halfway_attack_triggered: bool = false
 var _live_hold_progress_enabled: bool = false
@@ -41,13 +41,6 @@ func _build_angel_procession() -> void:
 			_angels.append(angel)
 
 
-func _select_attacker() -> Node3D:
-	var preferred_attacker: Node3D = get_node_or_null("Angel_12_R") as Node3D
-	if preferred_attacker != null:
-		return preferred_attacker
-	return super._select_attacker()
-
-
 func _on_gate_hold_progressed(player: Node, progress: float) -> void:
 	if _purified or _encounter_active or _halfway_attack_triggered:
 		return
@@ -66,11 +59,9 @@ func _on_gate_activated(player: Node) -> void:
 	if _purified:
 		super._on_gate_activated(player)
 		return
-	# The live-progress controller owns the first attempt and must interrupt it
-	# at exactly 50%. Never start the scare after a completed hold.
+	# Live hold progress owns the first attempt and interrupts it at 50%.
 	if _live_hold_progress_enabled:
 		return
-	# Compatibility fallback only for controllers that cannot report progress.
 	_trigger_halfway_attack(player)
 
 
@@ -103,86 +94,98 @@ func _start_gate_encounter(player: Node) -> void:
 	SFXDirector.play_transition()
 	_player.set_objective("The portal stops exactly halfway open.")
 
-	var active_camera: Camera3D = get_viewport().get_camera_3d()
-	if active_camera != null:
-		_scare_camera_forward = -active_camera.global_transform.basis.z.normalized()
-	if _scare_camera_forward.length_squared() < 0.5:
-		_scare_camera_forward = Vector3.FORWARD
-
-	var gate_tween: Tween = create_tween().set_parallel(true)
-	gate_tween.tween_property(_gate_root, "scale", Vector3(1.085, 1.085, 1.085), 0.90).set_trans(Tween.TRANS_SINE)
-	gate_tween.tween_property(_gold_flash, "color:a", 0.28, 0.90).set_trans(Tween.TRANS_SINE)
-	await get_tree().create_timer(0.95).timeout
-
 	_attacker = _select_attacker()
 	if _attacker == null:
 		await _complete_qte_success()
 		return
 
 	_scare_title.text = "THE GATE STOPS HALFWAY"
-	_scare_instruction.text = "FOOTSTEPS CROSS THE PROCESSION"
+	_scare_instruction.text = "SOMETHING IS STANDING BESIDE YOU"
 	_finale_overlay.visible = true
 	_finale_overlay.modulate.a = 0.0
 	var overlay_tween: Tween = create_tween()
-	overlay_tween.tween_property(_finale_overlay, "modulate:a", 1.0, 0.55)
+	overlay_tween.tween_property(_finale_overlay, "modulate:a", 1.0, 0.16)
+
+	var gate_tween: Tween = create_tween().set_parallel(true)
+	gate_tween.tween_property(
+		_gate_root,
+		"scale",
+		Vector3(1.085, 1.085, 1.085),
+		0.42
+	).set_trans(Tween.TRANS_SINE)
+	gate_tween.tween_property(_gold_flash, "color:a", 0.30, 0.42).set_trans(Tween.TRANS_SINE)
 
 	var player_head: Vector3 = _player.global_position + Vector3.UP * 1.62
-	var attacker_target: Vector3 = (
-		_player.global_position
-		+ _scare_camera_forward * 0.96
-		+ Vector3.DOWN * 0.68
-	)
-	if _attacker.has_method("begin_finale_grab"):
-		_attacker.call("begin_finale_grab", attacker_target, ANGEL_APPROACH_SECONDS)
+	var attacker_face: Vector3 = _get_attacker_face_position()
+	var attack_direction: Vector3 = attacker_face - player_head
+	attack_direction.y = 0.0
+	if attack_direction.length_squared() < 0.001:
+		attack_direction = Vector3.FORWARD
+	else:
+		attack_direction = attack_direction.normalized()
+	_scare_camera_forward = attack_direction
 
 	_build_first_person_camera()
-	var camera_tween: Tween = create_tween().set_parallel(true)
-	camera_tween.tween_property(
+	_store_and_hide_player_presentation(true)
+	_scare_camera_rig.look_at(attacker_face, Vector3.UP)
+	_scare_trauma = 0.18
+	var throw_tween: Tween = create_tween().set_parallel(true)
+	throw_tween.tween_property(
 		_scare_camera_rig,
 		"global_position",
 		player_head,
-		CAMERA_TO_EYES_SECONDS
-	).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_IN_OUT)
-	camera_tween.tween_property(
+		FIRST_PERSON_THROW_SECONDS
+	).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_OUT)
+	throw_tween.tween_property(
 		_scare_camera,
 		"fov",
-		72.0,
-		CAMERA_TO_EYES_SECONDS
-	).set_trans(Tween.TRANS_SINE)
-	await get_tree().create_timer(CAMERA_TO_EYES_SECONDS).timeout
-	_store_and_hide_player_presentation(true)
-	await get_tree().create_timer(ANGEL_APPROACH_SECONDS - CAMERA_TO_EYES_SECONDS).timeout
+		74.0,
+		FIRST_PERSON_THROW_SECONDS
+	).set_trans(Tween.TRANS_QUINT)
+	await get_tree().create_timer(FIRST_PERSON_THROW_SECONDS).timeout
 
-	_scare_title.text = "SHE IS CLOSE ENOUGH TO BREATHE ON YOU"
-	_scare_instruction.text = "THE CAMERA CANNOT TURN AWAY"
-	await get_tree().create_timer(PRE_GRAB_HOLD_SECONDS).timeout
+	_scare_title.text = "IT WAS ALREADY WATCHING YOU"
+	_scare_instruction.text = "YOU CANNOT TURN AWAY"
+	await get_tree().create_timer(TURN_HOLD_SECONDS).timeout
 
-	_scare_title.text = "SHE WAS WAITING FOR YOU TO OPEN IT"
-	_scare_instruction.text = "DO NOT LOOK AWAY"
+	var attacker_target: Vector3 = (
+		_player.global_position
+		+ attack_direction * 0.62
+		+ Vector3.DOWN * 0.68
+	)
+	if _attacker.has_method("begin_finale_lunge"):
+		_attacker.call(
+			"begin_finale_lunge",
+			attacker_target,
+			ANGEL_WINDUP_SECONDS,
+			ANGEL_LUNGE_SECONDS
+		)
+	elif _attacker.has_method("begin_finale_grab"):
+		_attacker.call("begin_finale_grab", attacker_target, ANGEL_LUNGE_SECONDS)
+
+	_scare_title.text = "SHE MOVES"
+	_scare_instruction.text = "TOO FAST"
+	var lens_tween: Tween = create_tween()
+	lens_tween.tween_property(
+		_scare_camera,
+		"fov",
+		60.0,
+		ANGEL_WINDUP_SECONDS + ANGEL_LUNGE_SECONDS
+	).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
+	await get_tree().create_timer(ANGEL_WINDUP_SECONDS).timeout
+
 	_gate_scare_audio.call("play_grab")
 	_audio.call("set_corruption", 1.0)
 	_scare_trauma = 0.46
-	_blood_flash.color.a = 0.38
+	_blood_flash.color.a = 0.34
 	var blood_tween: Tween = create_tween()
-	blood_tween.tween_property(_blood_flash, "color:a", 0.06, 1.10)
+	blood_tween.tween_property(_blood_flash, "color:a", 0.05, ANGEL_LUNGE_SECONDS)
+	await get_tree().create_timer(ANGEL_LUNGE_SECONDS * 0.76).timeout
 
-	var face_position: Vector3 = _get_attacker_face_position()
-	var close_position: Vector3 = face_position - _scare_camera_forward * 0.31
-	var pull_tween: Tween = create_tween().set_parallel(true)
-	pull_tween.tween_property(
-		_scare_camera_rig,
-		"global_position",
-		close_position,
-		FACE_PULL_SECONDS
-	).set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_IN_OUT)
-	pull_tween.tween_property(
-		_scare_camera,
-		"fov",
-		58.0,
-		FACE_PULL_SECONDS
-	).set_trans(Tween.TRANS_SINE)
-	await get_tree().create_timer(FACE_PULL_SECONDS).timeout
-	_scare_trauma = 0.72
-	_blood_flash.color.a = 0.28
-	await get_tree().create_timer(POST_PULL_HOLD_SECONDS).timeout
+	_scare_trauma = 1.0
+	_blood_flash.color.a = 0.62
+	_scare_title.text = "SHE IS IN YOUR FACE"
+	_scare_instruction.text = "BREAK HER GRIP"
+	await get_tree().create_timer(ANGEL_LUNGE_SECONDS * 0.24).timeout
+	await get_tree().create_timer(JUMPSCARE_HOLD_SECONDS).timeout
 	_begin_qte()
