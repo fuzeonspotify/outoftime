@@ -1,8 +1,10 @@
 # Kenney Level Expansion Assets
 
-The cemetery, Pontiac bridge, afterlife city, ruined nightclub, and skeleton chamber use additional official Kenney GLB models loaded by:
+The cemetery, Pontiac bridge, ruined nightclub and skeleton chamber use additional official Kenney GLB models loaded by:
 
 `scripts/world/kenney_level_expansion.gd`
+
+The void uses separate space-focused Kenney packs documented in `KENNEY_VOID_PACKS.md`.
 
 ## Sources
 
@@ -36,10 +38,10 @@ The cemetery, Pontiac bridge, afterlife city, ruined nightclub, and skeleton cha
 
 ## Runtime cache
 
-The files are downloaded from the pinned official GitHub revisions on the first level load and cached under:
+The files are downloaded from the pinned official GitHub revisions on first use and cached under:
 
 `user://kenney_level_expansion`
 
-Later scene loads reuse the cached files. If the download is unavailable, the existing procedural art remains active so progression is not blocked.
+Later scene loads reuse the cached files. If a download is unavailable, existing procedural art remains active so progression is not blocked.
 
-Attribution is not required for CC0 assets, but source information is retained here for provenance and appreciation.
+Attribution is not required for CC0 assets, but source information is retained for provenance and appreciation.
