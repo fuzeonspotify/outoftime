@@ -1,6 +1,16 @@
 extends "res://scripts/world/road_memory_final_cut.gd"
 
 const REQUIRED_CAR_NODE_NAME: String = "Porsche911Turbo"
+const METALLIC_RED: Color = Color("98141f")
+const BODY_MATERIAL_NAMES: Array[String] = [
+	"material.005",
+	"carpaint",
+	"car_paint",
+	"bodypaint",
+	"body_paint",
+	"exteriorpaint",
+	"exterior_paint"
+]
 const LEGACY_CAR_NODE_NAMES: Array[String] = [
 	"ModeledPontiacFallback",
 	"KenneyCC0Car",
@@ -39,10 +49,53 @@ func _build_car() -> void:
 	_normalize_car_model(_real_car_visual)
 	# The supplied Porsche faces positive Z. Bridge travel is toward negative Z.
 	_real_car_visual.rotation_degrees.y = 180.0
-	_tint_car_model(_real_car_visual)
+	_paint_car_metallic_red(_real_car_visual)
 	_add_car_lighting()
 	_add_car_camera()
 	_purge_non_porsche_geometry()
+
+
+func _paint_car_metallic_red(model_root: Node3D) -> void:
+	var mesh_nodes: Array[Node] = model_root.find_children("*", "MeshInstance3D", true, false)
+	var painted_surfaces: int = 0
+	for node: Node in mesh_nodes:
+		var mesh_instance: MeshInstance3D = node as MeshInstance3D
+		if mesh_instance == null or mesh_instance.mesh == null:
+			continue
+		for surface_index: int in range(mesh_instance.mesh.get_surface_count()):
+			var source_material: Material = mesh_instance.get_active_material(surface_index)
+			var source_standard: StandardMaterial3D = source_material as StandardMaterial3D
+			if source_standard == null or source_standard.emission_enabled:
+				continue
+			var material_name: String = str(source_standard.resource_name).to_lower()
+			var source_color: Color = source_standard.albedo_color
+			var known_body_material: bool = BODY_MATERIAL_NAMES.has(material_name)
+			var semantic_body_material: bool = (
+				material_name.contains("paint")
+				or material_name.contains("body")
+				or material_name.contains("exterior")
+				or material_name.contains("shell")
+			)
+			var red_dominant_surface: bool = (
+				source_color.r > 0.18
+				and source_color.r > source_color.g * 2.0
+				and source_color.r > source_color.b * 2.0
+			)
+			if not known_body_material and not semantic_body_material and not red_dominant_surface:
+				continue
+
+			var painted_material: StandardMaterial3D = source_standard.duplicate() as StandardMaterial3D
+			if painted_material == null:
+				continue
+			# Keep any supplied texture detail and tint it with the requested paint.
+			painted_material.albedo_color = METALLIC_RED
+			painted_material.metallic = 0.92
+			painted_material.roughness = 0.18
+			mesh_instance.set_surface_override_material(surface_index, painted_material)
+			painted_surfaces += 1
+
+	if painted_surfaces == 0:
+		push_error("PORSCHE PAINT ERROR: no body-paint surface was identified; glass, tires, and lights were left unchanged.")
 
 
 func _remove_existing_bridge_car() -> void:
