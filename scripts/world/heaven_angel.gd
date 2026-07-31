@@ -5,6 +5,8 @@ var _base_yaw: float = 0.0
 var _phase: float = 0.0
 var _side: float = 1.0
 var _elapsed: float = 0.0
+var _finale_grab_active: bool = false
+var _purified: bool = false
 
 var _visual_root: Node3D
 var _left_wing: Node3D
@@ -34,6 +36,13 @@ func configure(spawn_position: Vector3, phase: float) -> void:
 func set_corruption(value: float, player_position: Vector3, delta: float) -> void:
 	var corruption: float = clampf(value, 0.0, 1.0)
 	_elapsed += delta
+	if _purified:
+		_update_purified_pose(delta)
+		return
+	if _finale_grab_active:
+		_update_grab_pose(corruption)
+		return
+
 	var calm_bob: float = sin(_elapsed * 1.15 + _phase) * 0.06 * (1.0 - corruption)
 	var hostile_tremor: float = sin(_elapsed * 8.0 + _phase) * 0.018 * corruption
 	position.y = _base_position.y + calm_bob + hostile_tremor
@@ -76,8 +85,84 @@ func set_corruption(value: float, player_position: Vector3, delta: float) -> voi
 	_update_materials(corruption)
 
 
+func begin_finale_grab(target_world_position: Vector3, duration: float) -> void:
+	_finale_grab_active = true
+	_purified = false
+	var target_local_position: Vector3 = target_world_position
+	var parent_3d: Node3D = get_parent() as Node3D
+	if parent_3d != null:
+		target_local_position = parent_3d.to_local(target_world_position)
+	var lunge_tween: Tween = create_tween().set_parallel(true)
+	lunge_tween.tween_property(self, "position", target_local_position, maxf(0.15, duration)).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
+	lunge_tween.tween_property(self, "rotation:z", 0.0, maxf(0.15, duration) * 0.55)
+	lunge_tween.tween_property(_visual_root, "scale", Vector3.ONE * 1.10, maxf(0.15, duration)).set_trans(Tween.TRANS_QUINT)
+	lunge_tween.tween_property(_left_wing, "rotation_degrees", Vector3(32.0, -58.0, -88.0), maxf(0.15, duration))
+	lunge_tween.tween_property(_right_wing, "rotation_degrees", Vector3(32.0, 58.0, 88.0), maxf(0.15, duration))
+
+
+func finish_finale_grab(success: bool) -> void:
+	_finale_grab_active = false
+	if success:
+		_purified = true
+		var release_tween: Tween = create_tween().set_parallel(true)
+		release_tween.tween_property(self, "position", _base_position, 1.55).set_trans(Tween.TRANS_QUINT)
+		release_tween.tween_property(self, "rotation", Vector3(0.0, _base_yaw, 0.0), 1.35).set_trans(Tween.TRANS_QUINT)
+		release_tween.tween_property(_visual_root, "scale", Vector3.ONE, 1.15)
+	else:
+		var kill_tween: Tween = create_tween().set_parallel(true)
+		kill_tween.tween_property(_visual_root, "scale", Vector3.ONE * 1.42, 0.42).set_trans(Tween.TRANS_EXPO)
+		kill_tween.tween_property(_visual_root, "rotation_degrees:x", 34.0, 0.42).set_trans(Tween.TRANS_EXPO)
+
+
+func set_purified(value: bool) -> void:
+	_purified = value
+	if value:
+		_left_horn.scale = Vector3.ZERO
+		_right_horn.scale = Vector3.ZERO
+
+
+func get_face_position() -> Vector3:
+	return _visual_root.to_global(Vector3(0.0, 2.30, -0.23))
+
+
 func get_whisper_position() -> Vector3:
 	return global_position + Vector3.UP * 1.75
+
+
+func _update_grab_pose(_corruption: float) -> void:
+	rotation.z = sin(_elapsed * 13.0 + _phase) * deg_to_rad(2.2)
+	_visual_root.rotation_degrees.x = 18.0 + sin(_elapsed * 9.0) * 2.5
+	_halo.position.y = 2.06
+	_halo.rotation_degrees = Vector3(26.0, _elapsed * 96.0, 78.0 * _side)
+	_halo.scale = Vector3.ONE * 0.48
+	_left_horn.scale = Vector3.ONE
+	_right_horn.scale = Vector3.ONE
+	_update_materials(1.0)
+
+
+func _update_purified_pose(_delta: float) -> void:
+	var bob: float = sin(_elapsed * 1.05 + _phase) * 0.055
+	if not _finale_grab_active:
+		position.y = move_toward(position.y, _base_position.y + bob, 0.035)
+	rotation.z = lerpf(rotation.z, 0.0, 0.08)
+	_visual_root.position.y = lerpf(_visual_root.position.y, 0.0, 0.08)
+	_visual_root.rotation_degrees.x = lerpf(_visual_root.rotation_degrees.x, 0.0, 0.08)
+	_left_wing.rotation_degrees = _left_wing.rotation_degrees.lerp(Vector3(-8.0, -10.0, -30.0), 0.08)
+	_right_wing.rotation_degrees = _right_wing.rotation_degrees.lerp(Vector3(-8.0, 10.0, 30.0), 0.08)
+	_halo.position.y = lerpf(_halo.position.y, 2.90, 0.08)
+	_halo.rotation_degrees = _halo.rotation_degrees.lerp(Vector3(90.0, 0.0, 0.0), 0.08)
+	_halo.scale = _halo.scale.lerp(Vector3.ONE * 1.12, 0.08)
+	_left_horn.scale = Vector3.ZERO
+	_right_horn.scale = Vector3.ZERO
+	_robe_material.albedo_color = Color("fffdf2")
+	_skin_material.albedo_color = Color("f7dfc8")
+	_wing_material.albedo_color = Color("fff9dd")
+	_halo_material.albedo_color = Color("ffe17a")
+	_halo_material.emission = Color("ffd14f")
+	_halo_material.emission_energy_multiplier = 3.8
+	_eye_material.albedo_color = Color("fff0a8")
+	_eye_material.emission = Color("ffd869")
+	_eye_material.emission_energy_multiplier = 2.6
 
 
 func _build_visual() -> void:
