@@ -60,27 +60,28 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_accept") or event.is_action_pressed("interact"):
 		if not _text_fully_revealed:
 			_reveal_text_immediately()
-		elif _choice_buttons.size() == 1 and _current_node.get("choices", []).is_empty():
-			_choice_buttons[0].emit_signal("pressed")
+		elif _choice_buttons.size() == 1 and _current_choices().is_empty():
+			_choice_buttons[0].pressed.emit()
 		get_viewport().set_input_as_handled()
 		return
 
-	if event is InputEventKey:
-		var key_event: InputEventKey = event as InputEventKey
-		if key_event.pressed and not key_event.echo:
-			var choice_index: int = -1
-			match key_event.physical_keycode:
-				KEY_1:
-					choice_index = 0
-				KEY_2:
-					choice_index = 1
-				KEY_3:
-					choice_index = 2
-				KEY_4:
-					choice_index = 3
-			if choice_index >= 0 and choice_index < _choice_buttons.size() and _text_fully_revealed:
-				_choice_buttons[choice_index].emit_signal("pressed")
-				get_viewport().set_input_as_handled()
+	var key_event: InputEventKey = event as InputEventKey
+	if key_event == null or not key_event.pressed or key_event.echo or not _text_fully_revealed:
+		return
+
+	var choice_index: int = -1
+	match key_event.physical_keycode:
+		KEY_1:
+			choice_index = 0
+		KEY_2:
+			choice_index = 1
+		KEY_3:
+			choice_index = 2
+		KEY_4:
+			choice_index = 3
+	if choice_index >= 0 and choice_index < _choice_buttons.size():
+		_choice_buttons[choice_index].pressed.emit()
+		get_viewport().set_input_as_handled()
 
 
 func start_conversation(
@@ -118,12 +119,12 @@ func start_conversation(
 
 	_overlay.visible = true
 	_overlay.modulate = Color(1.0, 1.0, 1.0, 0.0)
-	_top_bar.size.y = 0.0
-	_bottom_bar.size.y = 0.0
+	_top_bar.offset_bottom = 0.0
+	_bottom_bar.offset_top = 0.0
 	var reveal_tween: Tween = create_tween().set_parallel(true)
 	reveal_tween.tween_property(_overlay, "modulate:a", 1.0, 0.32)
-	reveal_tween.tween_property(_top_bar, "size:y", 68.0, 0.42).set_trans(Tween.TRANS_SINE)
-	reveal_tween.tween_property(_bottom_bar, "size:y", 68.0, 0.42).set_trans(Tween.TRANS_SINE)
+	reveal_tween.tween_property(_top_bar, "offset_bottom", 68.0, 0.42).set_trans(Tween.TRANS_SINE)
+	reveal_tween.tween_property(_bottom_bar, "offset_top", -68.0, 0.42).set_trans(Tween.TRANS_SINE)
 
 	conversation_started.emit(conversation_id)
 	_show_node(start_node)
@@ -165,7 +166,7 @@ func _build_interface() -> void:
 
 	var dim: ColorRect = ColorRect.new()
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	dim.color = Color(0.015, 0.008, 0.028, 0.20)
+	dim.color = Color(0.015, 0.008, 0.028, 0.24)
 	dim.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_overlay.add_child(dim)
 
@@ -173,6 +174,7 @@ func _build_interface() -> void:
 
 	_top_bar = ColorRect.new()
 	_top_bar.anchor_right = 1.0
+	_top_bar.offset_bottom = 0.0
 	_top_bar.color = Color(0.005, 0.003, 0.010, 0.98)
 	_top_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_overlay.add_child(_top_bar)
@@ -181,7 +183,7 @@ func _build_interface() -> void:
 	_bottom_bar.anchor_top = 1.0
 	_bottom_bar.anchor_right = 1.0
 	_bottom_bar.anchor_bottom = 1.0
-	_bottom_bar.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	_bottom_bar.offset_top = 0.0
 	_bottom_bar.color = Color(0.005, 0.003, 0.010, 0.98)
 	_bottom_bar.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_overlay.add_child(_bottom_bar)
@@ -206,8 +208,8 @@ func _build_interface() -> void:
 	_dialogue_panel.name = "DialoguePanel"
 	_dialogue_panel.anchor_left = 0.10
 	_dialogue_panel.anchor_right = 0.90
-	_dialogue_panel.anchor_top = 0.60
-	_dialogue_panel.anchor_bottom = 0.92
+	_dialogue_panel.anchor_top = 0.50
+	_dialogue_panel.anchor_bottom = 0.93
 	_dialogue_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	_dialogue_panel.add_theme_stylebox_override(
 		"panel",
@@ -247,7 +249,7 @@ func _build_interface() -> void:
 	_body_label.name = "DialogueText"
 	_body_label.bbcode_enabled = false
 	_body_label.fit_content = false
-	_body_label.custom_minimum_size = Vector2(0.0, 78.0)
+	_body_label.custom_minimum_size = Vector2(0.0, 82.0)
 	_body_label.scroll_active = false
 	_body_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	UI_STYLE.apply_rich_text(_body_label, 23, UI_STYLE.COLOR_TEXT)
@@ -313,7 +315,7 @@ func _show_node(node_id: String) -> void:
 	var duration: float = clampf(float(_body_label.text.length()) * 0.019, 0.42, 3.2)
 	_typing_tween = create_tween()
 	_typing_tween.tween_property(_body_label, "visible_ratio", 1.0, duration)
-	_typing_tween.finished.connect(_on_typewriter_finished)
+	_typing_tween.finished.connect(Callable(self, "_on_typewriter_finished"))
 
 
 func _on_typewriter_finished() -> void:
@@ -330,16 +332,22 @@ func _reveal_text_immediately() -> void:
 	_build_choices_for_current_node()
 
 
+func _current_choices() -> Array:
+	var choices_variant: Variant = _current_node.get("choices", [])
+	if choices_variant is Array:
+		return choices_variant as Array
+	return []
+
+
 func _build_choices_for_current_node() -> void:
 	if not _choice_buttons.is_empty():
 		return
-	var choices_variant: Variant = _current_node.get("choices", [])
-	var node_choices: Array = choices_variant as Array if choices_variant is Array else []
+	var node_choices: Array = _current_choices()
 	if node_choices.is_empty():
 		_choice_hint.text = "THE MEMORY IS WAITING"
 		var end_text: String = "CONTINUE" if _current_node.has("next") else "END CONVERSATION"
 		var continue_button: Button = UI_STYLE.make_button(end_text, true, Vector2(0.0, 42.0))
-		continue_button.pressed.connect(_on_continue_pressed)
+		continue_button.pressed.connect(Callable(self, "_on_continue_pressed"))
 		_choices.add_child(continue_button)
 		_choice_buttons.append(continue_button)
 		continue_button.grab_focus()
@@ -357,7 +365,7 @@ func _build_choices_for_current_node() -> void:
 			Vector2(0.0, 40.0)
 		)
 		choice_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		choice_button.pressed.connect(_on_choice_selected.bind(index))
+		choice_button.pressed.connect(Callable(self, "_on_choice_selected").bind(index))
 		_choices.add_child(choice_button)
 		_choice_buttons.append(choice_button)
 	if not _choice_buttons.is_empty():
@@ -367,16 +375,14 @@ func _build_choices_for_current_node() -> void:
 func _clear_choices() -> void:
 	_choice_buttons.clear()
 	for child: Node in _choices.get_children():
+		_choices.remove_child(child)
 		child.queue_free()
 
 
 func _on_choice_selected(choice_index: int) -> void:
 	if not _text_fully_revealed:
 		return
-	var choices_variant: Variant = _current_node.get("choices", [])
-	if not (choices_variant is Array):
-		return
-	var node_choices: Array = choices_variant as Array
+	var node_choices: Array = _current_choices()
 	if choice_index < 0 or choice_index >= node_choices.size():
 		return
 	var choice_variant: Variant = node_choices[choice_index]
@@ -434,8 +440,8 @@ func _set_camera_shot(shot_name: String) -> void:
 	direction = direction.normalized()
 	var side: Vector3 = Vector3.UP.cross(direction).normalized()
 	var midpoint: Vector3 = (player_focus + speaker_focus) * 0.5
-	var destination: Vector3
-	var target: Vector3
+	var destination: Vector3 = midpoint
+	var target: Vector3 = midpoint
 	var target_fov: float = 55.0
 
 	match shot_name:
@@ -488,13 +494,18 @@ func _player_focus_position() -> Vector3:
 	if _player != null and _player.has_method("get_dialogue_focus_position"):
 		var result: Variant = _player.call("get_dialogue_focus_position")
 		if result is Vector3:
-			return result as Vector3
+			var focus_position: Vector3 = result
+			return focus_position
 	var player_3d: Node3D = _player as Node3D
-	return player_3d.global_position + Vector3.UP * 1.45 if player_3d != null else Vector3.ZERO
+	if player_3d != null:
+		return player_3d.global_position + Vector3.UP * 1.45
+	return Vector3.ZERO
 
 
 func _speaker_focus_position() -> Vector3:
-	return _speaker.global_position + Vector3.UP * 1.45 if _speaker != null else Vector3.ZERO
+	if _speaker != null:
+		return _speaker.global_position + Vector3.UP * 1.45
+	return Vector3.ZERO
 
 
 func _update_typewriter_audio() -> void:
@@ -511,7 +522,9 @@ func _update_scanlines() -> void:
 	for index: int in range(_scanlines.size()):
 		var alpha: float = 0.010 + (sin(_camera_time * 1.7 + float(index) * 0.43) * 0.5 + 0.5) * 0.014
 		var line: ColorRect = _scanlines[index]
-		line.color.a = alpha
+		var line_color: Color = line.color
+		line_color.a = alpha
+		line.color = line_color
 
 
 func _finish_conversation() -> void:
@@ -524,8 +537,8 @@ func _finish_conversation() -> void:
 
 	var fade_tween: Tween = create_tween().set_parallel(true)
 	fade_tween.tween_property(_overlay, "modulate:a", 0.0, 0.34)
-	fade_tween.tween_property(_top_bar, "size:y", 0.0, 0.34)
-	fade_tween.tween_property(_bottom_bar, "size:y", 0.0, 0.34)
+	fade_tween.tween_property(_top_bar, "offset_bottom", 0.0, 0.34)
+	fade_tween.tween_property(_bottom_bar, "offset_top", 0.0, 0.34)
 	await fade_tween.finished
 	_overlay.visible = false
 
