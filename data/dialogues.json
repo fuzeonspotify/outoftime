@@ -1,0 +1,197 @@
+{
+  "cemetery_woman": {
+    "start": "opening",
+    "default_outcome": "doubt",
+    "nodes": {
+      "opening": {
+        "speaker": "THE WOMAN",
+        "text": "You're late.",
+        "shot": "speaker_close",
+        "choices": [
+          {"text": "Who are you?", "next": "who_are_you", "tone": "doubt"},
+          {"text": "Have we met before?", "next": "met_before", "tone": "memory"},
+          {"text": "What happened to me?", "next": "what_happened", "tone": "fear"}
+        ]
+      },
+      "who_are_you": {
+        "speaker": "THE WOMAN",
+        "text": "Someone who has waited at this gate longer than you remember being dead.",
+        "shot": "two_shot",
+        "choices": [
+          {"text": "Then tell me why you waited.", "next": "why_wait", "tone": "trust"},
+          {"text": "You still haven't answered me.", "next": "not_answered", "tone": "defiance"}
+        ]
+      },
+      "met_before": {
+        "speaker": "THE WOMAN",
+        "text": "Not in a way you would believe yet. You always recognize me before you recognize yourself.",
+        "shot": "speaker_close",
+        "choices": [
+          {"text": "What do you mean by always?", "next": "always", "tone": "memory"},
+          {"text": "Stop speaking in riddles.", "next": "not_answered", "tone": "defiance"}
+        ]
+      },
+      "what_happened": {
+        "speaker": "THE WOMAN",
+        "text": "You ran out of time. The cemetery only gave you enough back to ask the wrong questions.",
+        "shot": "player_close",
+        "choices": [
+          {"text": "Am I dead?", "next": "dead_answer", "tone": "fear"},
+          {"text": "Then help me remember.", "next": "why_wait", "tone": "trust"}
+        ]
+      },
+      "why_wait": {
+        "speaker": "THE WOMAN",
+        "text": "Because every road out of here begins with you deciding to follow me.",
+        "shot": "wide",
+        "choices": [
+          {"text": "Lead the way.", "next": "follow", "tone": "trust"},
+          {"text": "I don't trust you.", "next": "distrust", "tone": "doubt"},
+          {"text": "This time, I choose where we go.", "next": "defiant_end", "tone": "defiance"}
+        ]
+      },
+      "not_answered": {
+        "speaker": "THE WOMAN",
+        "text": "Good. You are asking sharper questions than last time.",
+        "shot": "speaker_close",
+        "choices": [
+          {"text": "There it is again. Last time.", "next": "always", "tone": "memory"},
+          {"text": "I won't follow someone who lies to me.", "next": "distrust", "tone": "defiance"}
+        ]
+      },
+      "always": {
+        "speaker": "THE WOMAN",
+        "text": "Some memories return as places. Some return as people. Yours keeps returning as me.",
+        "shot": "two_shot",
+        "choices": [
+          {"text": "Then show me what I forgot.", "next": "follow", "tone": "memory"},
+          {"text": "I think you're the reason I forgot.", "next": "defiant_end", "tone": "defiance"}
+        ]
+      },
+      "dead_answer": {
+        "speaker": "THE WOMAN",
+        "text": "Dead is only the first thing you are now.",
+        "shot": "player_close",
+        "choices": [
+          {"text": "And the second?", "next": "why_wait", "tone": "fear"},
+          {"text": "I want the truth, not poetry.", "next": "not_answered", "tone": "defiance"}
+        ]
+      },
+      "follow": {
+        "speaker": "THE WOMAN",
+        "text": "Then stay close. The next memory moves faster than you do.",
+        "shot": "wide",
+        "outcome": "trust"
+      },
+      "distrust": {
+        "speaker": "THE WOMAN",
+        "text": "You never do. You follow anyway because the road already knows your footsteps.",
+        "shot": "wide",
+        "outcome": "doubt"
+      },
+      "defiant_end": {
+        "speaker": "THE WOMAN",
+        "text": "Maybe this is the version of you that finally makes it to the end awake.",
+        "shot": "speaker_close",
+        "outcome": "defiance"
+      }
+    }
+  },
+  "chamber_woman": {
+    "start": "confrontation",
+    "default_outcome": "truth",
+    "nodes": {
+      "confrontation": {
+        "speaker": "THE WOMAN",
+        "text": "You were not supposed to read those.",
+        "shot": "speaker_close",
+        "choices": [
+          {"text": "How many times have you done this?", "next": "how_many", "tone": "truth"},
+          {"text": "Why did you choose me?", "next": "why_me", "tone": "grief"},
+          {"text": "I remember the blade.", "next": "blade", "tone": "defiance"}
+        ]
+      },
+      "how_many": {
+        "speaker": "THE WOMAN",
+        "text": "Enough that I stopped counting faces and started counting songs.",
+        "shot": "two_shot",
+        "choices": [
+          {"text": "Every skeleton in this room was me.", "next": "every_one", "tone": "truth"},
+          {"text": "You used all of us.", "next": "used", "tone": "defiance"}
+        ]
+      },
+      "why_me": {
+        "speaker": "THE WOMAN",
+        "text": "Because you kept coming back. Because some part of you believed love could outlive the ending.",
+        "shot": "player_close",
+        "choices": [
+          {"text": "That wasn't love.", "next": "used", "tone": "truth"},
+          {"text": "Did you ever love any version of me?", "next": "ever_love", "tone": "grief"}
+        ]
+      },
+      "blade": {
+        "speaker": "THE WOMAN",
+        "text": "Then you remember more than the others did. I was afraid this time would be different.",
+        "shot": "speaker_close",
+        "choices": [
+          {"text": "It is different. I'm still looking at you.", "next": "break_cycle", "tone": "defiance"},
+          {"text": "Tell me why you killed me.", "next": "reason", "tone": "truth"}
+        ]
+      },
+      "every_one": {
+        "speaker": "THE WOMAN",
+        "text": "Not the same you. The same hope, wearing a different life each time.",
+        "shot": "wide",
+        "choices": [
+          {"text": "The cycle ends here.", "next": "break_cycle", "tone": "defiance"},
+          {"text": "I need the whole truth.", "next": "reason", "tone": "truth"}
+        ]
+      },
+      "used": {
+        "speaker": "THE WOMAN",
+        "text": "Yes. And every time I promised myself the next version would be the last.",
+        "shot": "two_shot",
+        "choices": [
+          {"text": "You don't get another version.", "next": "break_cycle", "tone": "defiance"},
+          {"text": "Why couldn't you stop?", "next": "reason", "tone": "truth"}
+        ]
+      },
+      "ever_love": {
+        "speaker": "THE WOMAN",
+        "text": "I loved the person you became on the road. I feared the person who reached this room.",
+        "shot": "player_close",
+        "choices": [
+          {"text": "Then look at me now.", "next": "mercy_end", "tone": "mercy"},
+          {"text": "Fear doesn't excuse murder.", "next": "break_cycle", "tone": "defiance"}
+        ]
+      },
+      "reason": {
+        "speaker": "THE WOMAN",
+        "text": "The chamber feeds on endings. If I refused it, the road took both of us. I chose to survive and called it fate.",
+        "shot": "wide",
+        "choices": [
+          {"text": "Then we destroy the chamber together.", "next": "truth_end", "tone": "truth"},
+          {"text": "You made your choice. Now I make mine.", "next": "break_cycle", "tone": "defiance"}
+        ]
+      },
+      "break_cycle": {
+        "speaker": "THE SKELETON",
+        "text": "There will be no next time.",
+        "shot": "player_close",
+        "outcome": "defiance"
+      },
+      "truth_end": {
+        "speaker": "THE SKELETON",
+        "text": "No more songs. No more replacements. We end the machine that kept us both here.",
+        "shot": "two_shot",
+        "outcome": "truth"
+      },
+      "mercy_end": {
+        "speaker": "THE SKELETON",
+        "text": "I remember what you did. I also remember why I kept following. Neither memory owns me now.",
+        "shot": "wide",
+        "outcome": "mercy"
+      }
+    }
+  }
+}
