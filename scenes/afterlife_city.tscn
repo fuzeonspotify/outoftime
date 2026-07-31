@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/afterlife_city.gd" id="1_city"]
 [ext_resource type="Script" path="res://scripts/world/city_audio.gd" id="2_audio"]
 [ext_resource type="Script" path="res://scripts/world/nightclub_transition.gd" id="3_transition"]
 [ext_resource type="Script" path="res://scripts/world/environment_art_pass.gd" id="4_art"]
 [ext_resource type="Script" path="res://scripts/models/world_model_upgrade.gd" id="5_models"]
+[ext_resource type="Script" path="res://scripts/world/kenney_city_loader.gd" id="6_kenney"]
 
 [node name="AfterlifeCity" type="Node3D"]
 script = ExtResource("1_city")
@@ -20,3 +21,6 @@ script = ExtResource("4_art")
 
 [node name="WorldModelUpgrade" type="Node" parent="."]
 script = ExtResource("5_models")
+
+[node name="KenneyCityLoader" type="Node" parent="."]
+script = ExtResource("6_kenney")
