@@ -28,7 +28,6 @@ CinematicPlayerLock="*res://scripts/dialogue/cinematic_player_lock.gd"
 gdscript/warnings/integer_division=0
 gdscript/warnings/shadowed_global_identifier=0
 gdscript/warnings/shadowed_variable_base_class=0
-gdscript/warnings/unused_private_class_variable=0
 
 [display]
 
