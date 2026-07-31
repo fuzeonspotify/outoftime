@@ -8,6 +8,7 @@ signal activated(player: Node)
 @export_multiline var interaction_message: String = "Something about this place feels familiar."
 @export var one_shot: bool = false
 @export var music_cue: String = ""
+@export var suppress_message: bool = false
 @export_range(0.0, 2.0, 0.05) var hold_duration: float = 0.42
 @export_range(1.0, 12.0, 0.25) var message_duration: float = 5.0
 @export var show_world_marker: bool = true
@@ -69,8 +70,8 @@ func interact(player: Node) -> void:
 
 	if one_shot:
 		_used = true
-	SFXDirector.play_interaction()
-	if player.has_method("show_interaction_message"):
+	SFXDirector.play_interaction(interaction_context)
+	if not suppress_message and not interaction_message.strip_edges().is_empty() and player.has_method("show_interaction_message"):
 		player.call(
 			"show_interaction_message",
 			interaction_message,
