@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/ruined_nightclub.gd" id="1_club"]
 [ext_resource type="Script" path="res://scripts/world/nightclub_layout_fix.gd" id="2_layout"]
 [ext_resource type="Script" path="res://scripts/world/environment_art_pass.gd" id="3_art"]
 [ext_resource type="Script" path="res://scripts/models/world_model_upgrade.gd" id="4_models"]
+[ext_resource type="Script" path="res://scripts/world/kenney_level_expansion.gd" id="5_kenney"]
 
 [node name="RuinedNightclub" type="Node3D"]
 script = ExtResource("1_club")
@@ -16,3 +17,6 @@ script = ExtResource("3_art")
 
 [node name="WorldModelUpgrade" type="Node" parent="."]
 script = ExtResource("4_models")
+
+[node name="KenneyLevelExpansion" type="Node" parent="."]
+script = ExtResource("5_kenney")
