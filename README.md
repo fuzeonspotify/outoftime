@@ -10,7 +10,7 @@ You play as a skeleton who wakes in a surreal afterlife and follows a mysterious
 
 The current Godot 4 project contains a connected five-chapter vertical slice:
 
-1. **The Cemetery** — awaken, examine the memorial and meet the woman at the gate.
+1. **The Cemetery** — awaken, examine the memorial and question the woman at the gate.
 2. **The Memory Bridge** — steer the spectral Pontiac through failed memories.
 3. **The Void** — cross floating ruins while gravity shifts, reverses and nearly disappears.
 4. **The Ruined Club** — restore three breakers while the spectral crowd closes in.
@@ -20,10 +20,14 @@ The build includes:
 
 - Third-person movement, sprinting, jumping and spring-arm camera collision
 - Contextual hold-to-interact prompts with world markers and progress feedback
-- Chapter objectives, narrative message cards and consistent status UI
+- Branching conversations with multiple responses and outcome-specific objectives
+- Cinematic dialogue cameras, close-ups, two-shots, wide shots and letterbox presentation
+- Typewriter dialogue pacing, numbered response shortcuts and dedicated choice feedback
+- Chapter objectives, narrative message cards and memory-signal HUD effects
 - Pause, restart chapter, return-to-title and quit controls in every chapter
-- Procedural ambience and optional local soundtrack cues
-- Runtime-loaded CC0 Kenney GLB environment assets with procedural fallbacks
+- Headphone-focused Music, Ambience, SFX, Dialogue and UI buses
+- Positional environmental details, dialogue ducking and independent room treatment
+- Runtime-loaded CC0 Kenney sound and GLB packs with procedural fallbacks
 - Responsive 16:9-first UI that expands safely to wider and taller windows
 
 ## Controls
@@ -36,17 +40,19 @@ The build includes:
 | `Shift` | Sprint |
 | `Space` | Jump |
 | Hold `E` | Interact |
+| `Enter` or `E` | Reveal dialogue text / continue |
+| `1`–`4` | Select dialogue response |
 | `Esc` | Pause |
 
 ## Open the project
 
 1. Clone or pull this repository.
-2. Open Godot 4.
+2. Open Godot 4.7.
 3. Import `project.godot` when opening the project for the first time.
 4. Press **F5**.
 5. Select **BEGIN STORY**.
 
-The first entry into levels that use downloadable Kenney assets can take longer while official CC0 model packs are cached. Later loads use the local cache. Procedural geometry remains available if an asset download fails.
+The first launch can take longer while official CC0 model and sound packs are cached asynchronously. Later sessions use the local caches. Procedural geometry and generated sound effects remain available if an asset download fails or the player is offline.
 
 ## Optional local music
 
@@ -72,12 +78,12 @@ The audio files are ignored by Git so unreleased master recordings are not publi
 
 ## Technical direction
 
-- Engine: Godot 4
-- Visual style: stylized low-poly neon afterlife with fog and cinematic lighting
+- Engine: Godot 4.7
+- Visual style: stylized low-poly neon afterlife with fog, memory-signal UI and cinematic lighting
 - Primary target: Windows desktop
 - Rendering: GL Compatibility
 - Scope: one focused short experience rather than a large unfinished game
 
 ## Asset provenance
 
-Kenney model sources and runtime cache behavior are documented under `assets/models/kenney/`. The referenced Kenney packs are CC0; source records are retained for provenance even where attribution is not required.
+Kenney model sources are documented under `assets/models/kenney/`. Runtime sound sources, licenses and cache behavior are documented in `assets/audio/CC0_AUDIO_LIBRARY.md`. The referenced packs are CC0; source records are retained for provenance even where attribution is not required.
