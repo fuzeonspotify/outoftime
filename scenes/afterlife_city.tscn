@@ -1,8 +1,10 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/afterlife_void_v2.gd" id="1_void"]
 [ext_resource type="Script" path="res://scripts/world/nightclub_transition.gd" id="2_transition"]
 [ext_resource type="Script" path="res://scripts/world/void_glb_expansion_v2.gd" id="3_glb"]
+[ext_resource type="Script" path="res://scripts/ui/scene_ui_polish.gd" id="4_ui"]
+[ext_resource type="Script" path="res://scripts/world/interaction_release_polish.gd" id="5_interactions"]
 
 [node name="AfterlifeVoid" type="Node3D"]
 script = ExtResource("1_void")
@@ -12,3 +14,9 @@ script = ExtResource("2_transition")
 
 [node name="VoidGLBExpansion" type="Node" parent="."]
 script = ExtResource("3_glb")
+
+[node name="SceneUIPolish" type="Node" parent="."]
+script = ExtResource("4_ui")
+
+[node name="InteractionReleasePolish" type="Node" parent="."]
+script = ExtResource("5_interactions")
