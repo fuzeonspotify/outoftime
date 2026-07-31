@@ -2,31 +2,35 @@
 
 Run these checks in an actual Godot 4.7 build after clearing the Output panel.
 
-## Centered bridge crash
+## Centered final-cut bridge crash
 
-- Complete or fail the Memory Road and confirm there is a readable pause before the crash begins.
-- Confirm the blockade is built directly across the center of the road rather than beside it.
-- Confirm the car approaches the centered blockade without an unexplained sideways teleport.
-- Confirm the approach lasts about 3.5 seconds and gives the player time to see the obstacle.
-- Confirm the first collision destroys the centered barrier pieces.
-- Confirm the car then slides toward the right rail for about 2.3 seconds.
-- Confirm the right guardrail breaks near the rail impact rather than during the first collision.
-- Confirm the fall remains visible for about 4.1 seconds before the whiteout begins.
+- Complete or fail the Memory Road and confirm there is about a 2.2-second premonition pause before the crash movement begins.
+- Confirm a seven-piece blockade spans the road with its center piece exactly on the road centerline.
+- Confirm the painted centerline leads directly to the blockade rather than an object beside the road.
+- Confirm the car remains centered while approaching and does not teleport sideways.
+- Confirm the long approach lasts about 5.8 seconds and clearly reveals the roadblock.
+- Confirm the separate braking shot lasts about 2.2 seconds before the final impact.
+- Confirm the first collision destroys only the centered blockade pieces.
+- Confirm the impact is held long enough to read before the car is thrown toward the right rail.
+- Confirm the rightward rail slide lasts about 3.6 seconds.
+- Confirm the right guardrail breaks late in the rail slide rather than during the center collision.
+- Confirm the fall remains visible for about 5.4 seconds before the whiteout begins.
 - Confirm the Car Concept keeps distinct paint, glass, interior and wheel materials through the crash.
 
 ## Gate midpoint interruption
 
 - Reach at least 92% Heaven corruption and verify the false gate becomes interactable.
-- Confirm the first hold duration is about 2.8 seconds.
+- Confirm the first hold duration is about 5 seconds.
 - Start holding E and watch the progress bar.
-- Confirm the angel attack begins when the first bar reaches 50%, before E is released and before normal gate activation completes.
+- Confirm the portal and progress bar stop at exactly 50%, before E is released and before normal gate activation completes.
 - Confirm releasing E after the interruption cannot activate the gate a second time.
-- Confirm the portal remains visually half-open as the attack starts.
-- Confirm the selected dark angel takes about 3.1 seconds to cross the aisle instead of teleporting to the player.
-- Confirm the camera moves from third person to eye height over about 1.25 seconds.
+- Confirm the portal remains visually half-open throughout the beginning of the attack.
+- Confirm the final-row right angel crosses the procession over about 5.4 seconds instead of teleporting.
+- Confirm the camera moves from third person to eye height over about 1.8 seconds.
 - Confirm the player model and HUD disappear only after the first-person camera reaches eye height.
-- Confirm the separate pull into the angel's face takes about 1.45 seconds.
-- Confirm the QTE waits through a brief close-face hold before appearing.
+- Confirm the angel pauses close to the player before grabbing them.
+- Confirm the separate pull into the angel's face takes about 2.6 seconds.
+- Confirm the camera holds close to the face for about one second before the QTE appears.
 - Confirm movement, mouse look, jumping, pausing and additional gate interaction are locked during the attack.
 
 ## W/A/S/D survival sequence
@@ -60,12 +64,13 @@ Run these checks in an actual Godot 4.7 build after clearing the Output panel.
 
 ## Complete rigged lead models
 
-- On a clean v2 character cache, confirm startup displays the character-model preparation state.
-- Confirm the main character is one complete skinned body named `RiggedMainCharacter`.
-- Confirm the old procedural skeleton meshes are hidden only when that complete rig loads successfully.
-- Confirm the player armature moves its arms, forearms, thighs, shins, spine, head and hips during walking, sprinting and jumping.
-- Confirm the player does not appear as the old skeleton with a replacement head.
-- Confirm the ghost woman is one complete skinned body named `RiggedGhostWoman` in both Cemetery and Chamber.
-- Confirm no separate corset top, synthetic head or hair cap is added over the ghost model.
-- Confirm her spine, head and arms move subtly during idle presentation.
-- Disconnect the network and clear the v2 optional cache; confirm the procedural story fallbacks remain playable without partial hybrid models.
+- On a clean v3 character cache, confirm startup displays the character-model preparation state.
+- Confirm the main character is the complete KayKit skinned skeleton named `RiggedMainSkeleton`.
+- Confirm the old procedural skeleton meshes are entirely hidden when the complete rig loads.
+- Confirm embedded idle, walk, run and airborne animations switch with player movement.
+- Confirm the player is not the old skeleton with a replacement head.
+- Confirm the ghost woman is one complete skinned body named `RiggedGhostWomanFullBody` in both Cemetery and Chamber.
+- Confirm her original opaque body and clothing textures remain coherent from every camera angle.
+- Confirm no separate corset, replacement head, synthetic hair cap or transparent top is added.
+- Confirm her full armature idles through its embedded animation or the manual full-rig fallback.
+- Disconnect the network and clear the v3 optional cache; confirm complete rigged fallbacks or the original procedural story placeholders remain playable without partial hybrid models.
