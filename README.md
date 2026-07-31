@@ -4,7 +4,7 @@
 
 > You were never the first.
 
-You play as a death-marked revenant who wakes in a surreal afterlife and follows a mysterious woman through memories that feel increasingly rehearsed. What begins as a rescue becomes a cycle: a cemetery, a spectral car ride, a fatal bridge crash, a Heaven that reveals itself as a lie, a ruined nightclub and a chamber filled with the people who followed her before.
+You play as a skeletal revenant who wakes in a surreal afterlife and follows a mysterious woman through memories that feel increasingly rehearsed. What begins as a rescue becomes a cycle: a cemetery, a spectral car ride, a fatal bridge crash, a Heaven that reveals itself as a lie, a ruined nightclub and a chamber filled with the people who followed her before.
 
 ## Playable experience
 
@@ -19,26 +19,26 @@ The current Godot 4 project contains a connected five-chapter vertical slice:
 The build includes:
 
 - Third-person movement, sprinting, jumping and spring-arm camera collision
-- One complete runtime-loaded and armature-driven main-character body
-- One complete runtime-loaded and armature-driven ghost-woman body in both story appearances
+- A complete KayKit skinned skeleton protagonist with embedded idle, walking, running and airborne animation selection
+- A complete MPFB skinned ghost-woman body with coherent opaque PBR clothing and full-armature idle motion in both story appearances
 - Contextual hold-to-interact prompts with live progress callbacks, world markers and progress feedback
 - Branching conversations with multiple responses and outcome-specific objectives
 - Cinematic dialogue cameras, close-ups, two-shots, wide shots and letterbox presentation
 - A seamless bridge-to-crash-to-Heaven transition with no completion menu between chapters
 - A detailed Khronos Car Concept vehicle with Kenney and procedural fallbacks
-- A centered bridge blockade and an expanded crash with a readable approach, barrier impact, rail slide, rollover, long fall and whiteout
+- A centered seven-piece bridge blockade and an expanded crash with a 5.8-second approach, separate braking shot, readable impact, 3.6-second rail slide, 5.4-second fall and long whiteout
 - Crash camera cuts, staged obstacle destruction, screen shake, tire screech, metal impact, glass and tinnitus effects
 - A fully reversible position-driven corruption system for lighting, fog, architecture, plants, particles, audio and NPC behavior
 - Twenty-six angel NPCs whose halos, wings, eyes, horns, posture and attention transform continuously into demonic forms
-- A first-person final-gate jumpscare that interrupts the first interaction at exactly 50% hold progress
-- A slower angel approach, eye-level camera transition and separate pull into the angel's face
+- A first-person final-gate jumpscare that interrupts the first five-second interaction at exactly 50% hold progress
+- A 5.4-second angel approach, eye-level camera transition, separate grab pause and 2.6-second pull into the angel's face
 - A seven-key W/A/S/D survival sequence with three attempts, death/restart and permanent golden-purification outcomes
 - Directional headphone whispers and a choir/drone mix that changes with the player's location
 - Typewriter dialogue pacing, numbered response shortcuts and dedicated choice feedback
 - Chapter objectives, narrative message cards and memory-signal HUD effects
 - Pause, restart chapter, return-to-title and quit controls throughout the game
 - Headphone-focused Music, Ambience, SFX, Dialogue and UI buses
-- Runtime-loaded optional assets with procedural fallbacks
+- Runtime-loaded optional assets with complete-model and procedural fallbacks
 - Responsive 16:9-first UI that expands safely to wider and taller windows
 
 ## Controls
@@ -63,7 +63,7 @@ The build includes:
 4. Press **F5**.
 5. Select **BEGIN STORY**.
 
-The first launch can take longer while optional sound, environment, complete character-rig and vehicle assets are cached. These assets are prepared before Begin Story becomes available, so the bridge crash and Heaven finale do not download or unpack files during gameplay. Procedural character, vehicle, geometry and audio fallbacks keep the complete story playable offline.
+The first launch can take longer while optional sound, environment, complete character-rig and vehicle assets are cached. These assets are prepared before Begin Story becomes available, so the bridge crash and Heaven finale do not download or unpack files during gameplay. The v3 character cache intentionally replaces the retired head-only and clothing-overlay assets. Complete rigged and procedural fallbacks keep the story playable offline.
 
 ## Optional local music
 
