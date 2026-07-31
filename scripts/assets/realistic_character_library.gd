@@ -35,19 +35,19 @@ func get_ghost_woman_prototype() -> Node3D:
 
 
 func _prepare_player_character() -> bool:
-	var model_paths: Array[String] = _scan_glb_paths(PLAYER_ROOT)
-	if model_paths.is_empty() and FileAccess.file_exists(PLAYER_ARCHIVE_PATH):
+	var primary_paths: Array[String] = _get_primary_player_paths()
+	if primary_paths.is_empty() and FileAccess.file_exists(PLAYER_ARCHIVE_PATH):
 		await _extract_player_archive()
-		model_paths = _scan_glb_paths(PLAYER_ROOT)
+		primary_paths = _get_primary_player_paths()
 
-	if model_paths.is_empty():
+	if primary_paths.is_empty():
 		if FileAccess.file_exists(PLAYER_ARCHIVE_PATH):
 			DirAccess.remove_absolute(ProjectSettings.globalize_path(PLAYER_ARCHIVE_PATH))
 		if await _download_file(PLAYER_ARCHIVE_URL, PLAYER_ARCHIVE_PATH):
 			await _extract_player_archive()
-			model_paths = _scan_glb_paths(PLAYER_ROOT)
+			primary_paths = _get_primary_player_paths()
 
-	for model_path: String in model_paths:
+	for model_path: String in primary_paths:
 		var prototype: Node3D = _load_rigged_glb(model_path)
 		if prototype == null:
 			continue
@@ -59,6 +59,16 @@ func _prepare_player_character() -> bool:
 		PLAYER_FALLBACK_PATH,
 		true
 	)
+
+
+func _get_primary_player_paths() -> Array[String]:
+	var primary_paths: Array[String] = []
+	var all_paths: Array[String] = _scan_glb_paths(PLAYER_ROOT)
+	for model_path: String in all_paths:
+		if model_path == PLAYER_FALLBACK_PATH:
+			continue
+		primary_paths.append(model_path)
+	return primary_paths
 
 
 func _prepare_direct_character(
