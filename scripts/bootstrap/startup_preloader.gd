@@ -7,6 +7,15 @@ const LEVEL_LOADER_SCRIPT: Script = preload("res://scripts/world/kenney_level_ex
 const VOID_LOADER_SCRIPT: Script = preload("res://scripts/world/void_glb_loader.gd")
 const VOID_ZIP_ROOT: String = "user://kenney_void_assets"
 const VOID_EXTRACTION_BATCH: int = 8
+const VOID_READY_MARKER: String = ".startup_ready"
+
+const SCENE_PATHS: Array[String] = [
+	"res://scenes/cemetery.tscn",
+	"res://scenes/road_memory.tscn",
+	"res://scenes/afterlife_city.tscn",
+	"res://scenes/ruined_nightclub.tscn",
+	"res://scenes/skeleton_chamber.tscn"
+]
 
 const LEVEL_FILES: Dictionary = {
 	"platformer": [
@@ -20,6 +29,7 @@ const LEVEL_FILES: Dictionary = {
 var _level_helper: Node
 var _void_helper: Node
 var _void_source_models: Dictionary = {}
+var _scene_cache: Dictionary = {}
 var _progress: float = 0.0
 var _status: String = "STARTING MEMORY ARCHIVE"
 var _ready_for_gameplay: bool = false
@@ -50,6 +60,10 @@ func get_status() -> String:
 
 func used_fallbacks() -> bool:
 	return _used_fallbacks
+
+
+func get_preloaded_scene(scene_path: String) -> PackedScene:
+	return _scene_cache.get(scene_path) as PackedScene
 
 
 func get_level_prototype(source_id: String, file_name: String) -> Node3D:
@@ -83,10 +97,11 @@ func _prepare_all() -> void:
 	_update_progress(0.02, "OPENING MEMORY ARCHIVE")
 	await get_tree().process_frame
 
+	var scenes_ready: bool = await _prepare_scene_resources()
 	var audio_ready: bool = await _prepare_audio()
 	var level_ready: bool = await _prepare_level_assets()
 	var void_ready: bool = await _prepare_void_assets()
-	_used_fallbacks = not audio_ready or not level_ready or not void_ready
+	_used_fallbacks = not scenes_ready or not audio_ready or not level_ready or not void_ready
 
 	_ready_for_gameplay = true
 	_preparing = false
@@ -97,8 +112,25 @@ func _prepare_all() -> void:
 	preload_completed.emit(_used_fallbacks)
 
 
+func _prepare_scene_resources() -> bool:
+	var all_loaded: bool = true
+	for scene_index: int in range(SCENE_PATHS.size()):
+		var scene_path: String = SCENE_PATHS[scene_index]
+		_update_progress(
+			lerpf(0.03, 0.10, float(scene_index + 1) / float(SCENE_PATHS.size())),
+			"WARMING CHAPTER  %d / %d" % [scene_index + 1, SCENE_PATHS.size()]
+		)
+		var packed_scene: PackedScene = load(scene_path) as PackedScene
+		if packed_scene == null:
+			all_loaded = false
+		else:
+			_scene_cache[scene_path] = packed_scene
+		await get_tree().process_frame
+	return all_loaded
+
+
 func _prepare_audio() -> bool:
-	_update_progress(0.06, "PREPARING HEADPHONE AUDIO")
+	_update_progress(0.12, "PREPARING HEADPHONE AUDIO")
 	if not OnlineAudioLibrary.has_method("prepare_library"):
 		return false
 	OnlineAudioLibrary.call("prepare_library")
@@ -108,7 +140,7 @@ func _prepare_audio() -> bool:
 
 
 func _prepare_level_assets() -> bool:
-	_update_progress(0.28, "PREPARING ENVIRONMENT MODELS")
+	_update_progress(0.30, "PREPARING ENVIRONMENT MODELS")
 	_level_helper.call("_ensure_cache_directories")
 	var all_cached: bool = bool(_level_helper.call("_all_assets_cached"))
 	if not all_cached:
@@ -130,7 +162,7 @@ func _prepare_level_assets() -> bool:
 			files_loaded += 1
 			var ratio: float = float(files_loaded) / float(total_files)
 			_update_progress(
-				lerpf(0.30, 0.50, ratio),
+				lerpf(0.32, 0.52, ratio),
 				"LOADING ENVIRONMENT MODEL  %d / %d" % [files_loaded, total_files]
 			)
 			await get_tree().process_frame
@@ -138,18 +170,21 @@ func _prepare_level_assets() -> bool:
 
 
 func _prepare_void_assets() -> bool:
-	_update_progress(0.52, "PREPARING VOID MODEL ARCHIVE")
+	_update_progress(0.54, "PREPARING VOID MODEL ARCHIVE")
 	_void_helper.call("_ensure_cache_directories")
 	_void_source_models.clear()
 
 	for source_index: int in range(2):
 		var source_id: String = "station" if source_index == 0 else "space"
+		var model_root: String = str(_void_helper.call("_models_root", source_id))
+		var marker_path: String = model_root.path_join(VOID_READY_MARKER)
 		var models: Array[String] = _scan_void_models(source_id)
-		if models.is_empty():
+		var cache_complete: bool = FileAccess.file_exists(marker_path) and not models.is_empty()
+		if not cache_complete:
 			var zip_path: String = VOID_ZIP_ROOT.path_join("%s.zip" % source_id)
 			if not FileAccess.file_exists(zip_path):
 				_update_progress(
-					0.54 + float(source_index) * 0.10,
+					0.56 + float(source_index) * 0.10,
 					"DOWNLOADING %s" % str(_void_helper.call("_source_display_name", source_id))
 				)
 				var remote_url: String = str(_void_helper.call("_source_url", source_id))
@@ -159,6 +194,7 @@ func _prepare_void_assets() -> bool:
 			var extracted: bool = await _extract_void_archive(source_id, zip_path, source_index)
 			if not extracted:
 				return false
+			_write_completion_marker(marker_path)
 			models = _scan_void_models(source_id)
 		if models.is_empty():
 			return false
@@ -235,15 +271,23 @@ func _extract_void_archive(source_id: String, zip_path: String, source_index: in
 
 		processed_files += 1
 		if processed_files % VOID_EXTRACTION_BATCH == 0:
-			var base_progress: float = 0.62 + float(source_index) * 0.08
+			var base_progress: float = 0.64 + float(source_index) * 0.07
 			_update_progress(
-				minf(base_progress + 0.06, 0.77),
+				minf(base_progress + 0.05, 0.77),
 				"UNPACKING VOID MODELS  //  %d READY" % extracted_models
 			)
 			await get_tree().process_frame
 
 	reader.close()
 	return extracted_models > 0
+
+
+func _write_completion_marker(marker_path: String) -> void:
+	var marker: FileAccess = FileAccess.open(marker_path, FileAccess.WRITE)
+	if marker == null:
+		return
+	marker.store_string("ready")
+	marker.close()
 
 
 func _update_progress(progress_value: float, status_text: String) -> void:
