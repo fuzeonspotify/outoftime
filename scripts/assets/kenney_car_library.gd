@@ -26,15 +26,7 @@ func prepare() -> bool:
 			return false
 		model_paths = _scan_model_paths()
 
-	if model_paths.is_empty():
-		return false
-
-	_selected_model_path = _choose_car_model(model_paths)
-	if _selected_model_path.is_empty():
-		return false
-
-	_prototype = _load_model_prototype(_selected_model_path)
-	if _prototype == null:
+	if model_paths.is_empty() or not _select_and_load_model(model_paths):
 		return false
 
 	_write_ready_marker()
@@ -164,31 +156,48 @@ func _scan_directory(directory_path: String, results: Array[String]) -> void:
 	directory.list_dir_end()
 
 
-func _choose_car_model(model_paths: Array[String]) -> String:
-	var best_path: String = ""
-	var best_score: int = -100000
+func _select_and_load_model(model_paths: Array[String]) -> bool:
+	var remaining_paths: Array[String] = model_paths.duplicate()
+	while not remaining_paths.is_empty():
+		var best_index: int = 0
+		var best_score: int = _score_model_path(remaining_paths[0])
+		for index: int in range(1, remaining_paths.size()):
+			var candidate_score: int = _score_model_path(remaining_paths[index])
+			if candidate_score > best_score:
+				best_score = candidate_score
+				best_index = index
+		var candidate_path: String = remaining_paths[best_index]
+		remaining_paths.remove_at(best_index)
+		if best_score <= -900:
+			continue
+		var candidate_prototype: Node3D = _load_model_prototype(candidate_path)
+		if candidate_prototype == null:
+			continue
+		_selected_model_path = candidate_path
+		_prototype = candidate_prototype
+		return true
+	return false
+
+
+func _score_model_path(model_path: String) -> int:
+	var file_name: String = model_path.get_file().to_lower()
+	var score: int = 0
 	var preferred_terms: Array[String] = ["muscle", "sedan", "sports", "sport", "coupe", "car"]
 	var rejected_terms: Array[String] = [
 		"wheel", "debris", "cone", "kart", "tractor", "truck", "van",
 		"ambulance", "fire", "police", "taxi", "race-driver", "character"
 	]
-	for model_path: String in model_paths:
-		var file_name: String = model_path.get_file().to_lower()
-		var score: int = 0
-		for rejected_term: String in rejected_terms:
-			if file_name.contains(rejected_term):
-				score -= 1000
-		for term_index: int in range(preferred_terms.size()):
-			if file_name.contains(preferred_terms[term_index]):
-				score += 120 - term_index * 14
-		if file_name.contains("sedan-sports") or file_name.contains("sports-sedan"):
-			score += 180
-		if file_name.ends_with(".glb"):
-			score += 8
-		if score > best_score:
-			best_score = score
-			best_path = model_path
-	return best_path
+	for rejected_term: String in rejected_terms:
+		if file_name.contains(rejected_term):
+			score -= 1000
+	for term_index: int in range(preferred_terms.size()):
+		if file_name.contains(preferred_terms[term_index]):
+			score += 120 - term_index * 14
+	if file_name.contains("sedan-sports") or file_name.contains("sports-sedan"):
+		score += 180
+	if file_name.ends_with(".glb"):
+		score += 8
+	return score
 
 
 func _load_model_prototype(model_path: String) -> Node3D:
