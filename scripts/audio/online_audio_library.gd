@@ -46,7 +46,7 @@ const CUE_RULES: Dictionary = {
 var _paths_by_pack: Dictionary = {}
 var _stream_cache: Dictionary = {}
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
-var _ready: bool = false
+var _library_is_ready: bool = false
 
 
 func _ready() -> void:
@@ -56,7 +56,7 @@ func _ready() -> void:
 
 
 func is_ready() -> bool:
-	return _ready
+	return _library_is_ready
 
 
 func get_stream(cue_id: String) -> AudioStream:
@@ -85,7 +85,7 @@ func _prepare_library() -> void:
 		if source_variant is Dictionary:
 			var source: Dictionary = source_variant
 			await _ensure_pack(pack_id, source)
-	_ready = true
+	_library_is_ready = true
 	library_ready.emit()
 
 
