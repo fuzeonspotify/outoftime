@@ -1,6 +1,10 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/third_person_controller.gd" id="1_player"]
+[ext_resource type="Script" path="res://scripts/models/player_skeleton_model.gd" id="2_model"]
 
 [node name="SkeletonPlayer" type="CharacterBody3D"]
 script = ExtResource("1_player")
+
+[node name="PlayerModelUpgrade" type="Node" parent="."]
+script = ExtResource("2_model")
