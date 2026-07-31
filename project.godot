@@ -8,6 +8,7 @@ run/main_scene="res://scenes/main.tscn"
 
 [autoload]
 MusicDirector="*res://scripts/audio/music_director.gd"
+SFXDirector="*res://scripts/audio/sfx_director.gd"
 
 [display]
 window/size/viewport_width=1280
