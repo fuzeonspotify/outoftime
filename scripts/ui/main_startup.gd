@@ -83,7 +83,7 @@ func _build_startup_overlay() -> void:
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	stack.add_child(heading)
 
-	_startup_status = UI_STYLE.make_label("OPENING MEMORY ARCHIVE", 17, UI_STYLE.COLOR_TEXT_MUTED)
+	_startup_status = UI_STYLE.make_label("OPENING EXACT ASSET ARCHIVE", 17, UI_STYLE.COLOR_TEXT_MUTED)
 	_startup_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_startup_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_startup_status.custom_minimum_size = Vector2(560.0, 38.0)
@@ -102,13 +102,13 @@ func _build_startup_overlay() -> void:
 	stack.add_child(_startup_percent)
 
 	_startup_detail = UI_STYLE.make_label(
-		"Warming the soundtrack, chapter scenes, complete rigged lead characters, environment assets, and realistic bridge vehicle keeps the crash and gate finale uninterrupted.",
+		"Downloading and validating the required Poly Haven environment models, PBR materials, complete character rigs, and exact bridge vehicle. No substitute environment models will be loaded.",
 		12,
 		UI_STYLE.COLOR_TEXT_DIM
 	)
 	_startup_detail.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_startup_detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_startup_detail.custom_minimum_size = Vector2(560.0, 46.0)
+	_startup_detail.custom_minimum_size = Vector2(560.0, 52.0)
 	stack.add_child(_startup_detail)
 
 
@@ -121,17 +121,23 @@ func _on_startup_progress_changed(progress: float, status: String) -> void:
 	_startup_status.text = status
 
 
-func _on_startup_preload_completed(used_fallbacks: bool) -> void:
+func _on_startup_preload_completed(_used_fallbacks: bool) -> void:
 	if _startup_finished:
 		return
+
+	if not StartupPreloader.is_ready():
+		_startup_progress.value = 100.0
+		_startup_percent.text = "FAILED"
+		_startup_status.text = StartupPreloader.get_status()
+		_startup_detail.text = "A required exact model or texture could not be downloaded or loaded. Begin Story remains locked; no low-poly or procedural replacement has been activated. Check the Godot output for the named asset, verify the internet connection, then restart the project."
+		_begin_button.disabled = true
+		return
+
 	_startup_finished = true
 	_startup_progress.value = 100.0
 	_startup_percent.text = "100%"
-	_startup_status.text = "MEMORY ARCHIVE READY"
-	if used_fallbacks:
-		_startup_detail.text = "Some optional online assets were unavailable. Procedural character, vehicle, audio, or environment fallbacks are active."
-	else:
-		_startup_detail.text = "Soundtrack, chapter scenes, complete rigged lead characters, realistic vehicle, and environments are warmed for uninterrupted play."
+	_startup_status.text = "EXACT HIGH-QUALITY ASSETS READY"
+	_startup_detail.text = "All five levels are using the required Poly Haven models and PBR surfaces. Powered by Poly Haven; environment assets are CC0."
 
 	await get_tree().create_timer(0.65).timeout
 	var fade_tween: Tween = create_tween()
