@@ -5,6 +5,7 @@ signal preload_completed(used_fallbacks: bool)
 
 const LEVEL_LOADER_SCRIPT: Script = preload("res://scripts/world/kenney_level_expansion.gd")
 const CAR_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/kenney_car_library.gd")
+const CHARACTER_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/realistic_character_library.gd")
 
 const SCENE_PATHS: Array[String] = [
 	"res://scenes/cemetery.tscn",
@@ -25,6 +26,7 @@ const LEVEL_FILES: Dictionary = {
 
 var _level_helper: Node
 var _car_library: Node
+var _character_library: Node
 var _scene_cache: Dictionary = {}
 var _progress: float = 0.0
 var _status: String = "STARTING MEMORY ARCHIVE"
@@ -37,8 +39,10 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_level_helper = LEVEL_LOADER_SCRIPT.new() as Node
 	_car_library = CAR_LIBRARY_SCRIPT.new() as Node
+	_character_library = CHARACTER_LIBRARY_SCRIPT.new() as Node
 	add_child(_level_helper)
 	add_child(_car_library)
+	add_child(_character_library)
 	_prepare_all.call_deferred()
 
 
@@ -84,6 +88,18 @@ func get_car_model_name() -> String:
 	return str(_car_library.call("get_selected_model_name"))
 
 
+func get_skeleton_head_prototype() -> Node3D:
+	if _character_library == null:
+		return null
+	return _character_library.call("get_skeleton_head_prototype") as Node3D
+
+
+func get_ghost_woman_prototype() -> Node3D:
+	if _character_library == null:
+		return null
+	return _character_library.call("get_ghost_woman_prototype") as Node3D
+
+
 func get_void_prototype(_model_path: String) -> Node3D:
 	# Compatibility for retired cached scenes. The active chapter is Heaven.
 	return null
@@ -102,9 +118,16 @@ func _prepare_all() -> void:
 
 	var scenes_ready: bool = await _prepare_scene_resources()
 	var audio_ready: bool = await _prepare_audio()
+	var character_ready: bool = await _prepare_character_assets()
 	var car_ready: bool = await _prepare_car_asset()
 	var level_ready: bool = await _prepare_level_assets()
-	_used_fallbacks = not scenes_ready or not audio_ready or not car_ready or not level_ready
+	_used_fallbacks = (
+		not scenes_ready
+		or not audio_ready
+		or not character_ready
+		or not car_ready
+		or not level_ready
+	)
 
 	_ready_for_gameplay = true
 	_preparing = false
@@ -120,7 +143,7 @@ func _prepare_scene_resources() -> bool:
 	for scene_index: int in range(SCENE_PATHS.size()):
 		var scene_path: String = SCENE_PATHS[scene_index]
 		_update_progress(
-			lerpf(0.04, 0.16, float(scene_index + 1) / float(SCENE_PATHS.size())),
+			lerpf(0.04, 0.15, float(scene_index + 1) / float(SCENE_PATHS.size())),
 			"WARMING CHAPTER  %d / %d" % [scene_index + 1, SCENE_PATHS.size()]
 		)
 		var packed_scene: PackedScene = load(scene_path) as PackedScene
@@ -133,7 +156,7 @@ func _prepare_scene_resources() -> bool:
 
 
 func _prepare_audio() -> bool:
-	_update_progress(0.20, "PREPARING HEADPHONE AUDIO")
+	_update_progress(0.18, "PREPARING HEADPHONE AUDIO")
 	if not OnlineAudioLibrary.has_method("prepare_library"):
 		return false
 	OnlineAudioLibrary.call("prepare_library")
@@ -142,22 +165,36 @@ func _prepare_audio() -> bool:
 	return bool(OnlineAudioLibrary.call("has_cached_audio"))
 
 
+func _prepare_character_assets() -> bool:
+	_update_progress(0.32, "PREPARING CHARACTER MODELS")
+	if _character_library == null or not _character_library.has_method("prepare"):
+		return false
+	var prepared_variant: Variant = await _character_library.call("prepare")
+	var prepared: bool = bool(prepared_variant)
+	_update_progress(
+		0.43,
+		"CHARACTER MODELS READY" if prepared else "CHARACTER FALLBACKS READY"
+	)
+	await get_tree().process_frame
+	return prepared
+
+
 func _prepare_car_asset() -> bool:
-	_update_progress(0.38, "PREPARING CC0 BRIDGE VEHICLE")
+	_update_progress(0.46, "PREPARING REALISTIC BRIDGE VEHICLE")
 	if _car_library == null or not _car_library.has_method("prepare"):
 		return false
 	var prepared_variant: Variant = await _car_library.call("prepare")
 	var prepared: bool = bool(prepared_variant)
-	if prepared:
-		_update_progress(0.50, "BRIDGE VEHICLE READY")
-	else:
-		_update_progress(0.50, "BRIDGE VEHICLE FALLBACK READY")
+	_update_progress(
+		0.58,
+		"BRIDGE VEHICLE READY" if prepared else "BRIDGE VEHICLE FALLBACK READY"
+	)
 	await get_tree().process_frame
 	return prepared
 
 
 func _prepare_level_assets() -> bool:
-	_update_progress(0.54, "PREPARING CEMETERY AND NIGHTCLUB MODELS")
+	_update_progress(0.61, "PREPARING CEMETERY AND NIGHTCLUB MODELS")
 	_level_helper.call("_ensure_cache_directories")
 	var all_cached: bool = bool(_level_helper.call("_all_assets_cached"))
 	if not all_cached:
@@ -179,7 +216,7 @@ func _prepare_level_assets() -> bool:
 			files_loaded += 1
 			var ratio: float = float(files_loaded) / float(total_files)
 			_update_progress(
-				lerpf(0.56, 0.96, ratio),
+				lerpf(0.63, 0.96, ratio),
 				"LOADING ENVIRONMENT MODEL  %d / %d" % [files_loaded, total_files]
 			)
 			await get_tree().process_frame
