@@ -600,7 +600,10 @@ func _animate_starfield(delta: float) -> void:
 
 func _animate_floating_geometry() -> void:
 	for body: StaticBody3D in _floating_bodies:
-		var base_position: Vector3 = body.get_meta("base_position", body.position)
+		var base_position_variant: Variant = body.get_meta("base_position", body.position)
+		var base_position: Vector3 = body.position
+		if base_position_variant is Vector3:
+			base_position = base_position_variant
 		var bob_amplitude: float = float(body.get_meta("bob_amplitude", 0.0))
 		var bob_phase: float = float(body.get_meta("bob_phase", 0.0))
 		body.position.y = base_position.y + sin(_elapsed_time * 0.65 + bob_phase) * bob_amplitude
