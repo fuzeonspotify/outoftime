@@ -11,6 +11,7 @@ var _startup_finished: bool = false
 
 func _ready() -> void:
 	super._ready()
+	_rewrite_story_copy()
 	_build_startup_overlay()
 	_begin_button.disabled = true
 	StartupPreloader.progress_changed.connect(_on_startup_progress_changed)
@@ -27,6 +28,21 @@ func _begin_game() -> void:
 	if not StartupPreloader.is_ready():
 		return
 	super._begin_game()
+
+
+func _rewrite_story_copy() -> void:
+	var labels: Array[Node] = find_children("*", "Label", true, false)
+	for node: Node in labels:
+		var label: Label = node as Label
+		if label == null:
+			continue
+		match label.text:
+			"Follow a familiar woman through a cemetery, a fractured memory,\na gravityless void, and the rooms that remember how you died.":
+				label.text = "Follow a familiar woman through a cemetery, a fractured road,\na midnight train, and the rooms that remember how you died."
+			"CEMETERY  •  MEMORY BRIDGE  •  VOID  •  RUINED CLUB  •  CHAMBER":
+				label.text = "CEMETERY  •  MEMORY ROAD  •  MEMORY TRAIN  •  RUINED CLUB  •  CHAMBER"
+			"WASD\nMove\n\nSHIFT\nSprint\n\nSPACE\nJump\n\nE\nHold to interact\n\nESC\nPause":
+				label.text = "WASD\nMove\n\nSHIFT\nSprint\n\nSPACE\nJump / vault\n\nE\nInteract / confirm track\n\nESC\nPause"
 
 
 func _build_startup_overlay() -> void:
@@ -93,7 +109,7 @@ func _build_startup_overlay() -> void:
 	stack.add_child(_startup_percent)
 
 	_startup_detail = UI_STYLE.make_label(
-		"Downloading and warming optional audio and model assets now prevents chapter transitions from stalling later.",
+		"Warming the soundtrack, chapter scenes, and optional models now keeps the Memory Train and later transitions uninterrupted.",
 		12,
 		UI_STYLE.COLOR_TEXT_DIM
 	)
@@ -120,9 +136,9 @@ func _on_startup_preload_completed(used_fallbacks: bool) -> void:
 	_startup_percent.text = "100%"
 	_startup_status.text = "MEMORY ARCHIVE READY"
 	if used_fallbacks:
-		_startup_detail.text = "Some optional online assets were unavailable. Procedural fallbacks are active and the full story remains playable."
+		_startup_detail.text = "Some optional online assets were unavailable. Procedural audio and environment fallbacks are active."
 	else:
-		_startup_detail.text = "Audio, environments, and void models are warmed and ready for uninterrupted chapter transitions."
+		_startup_detail.text = "Soundtrack, chapter scenes, Memory Train, and environments are warmed for uninterrupted transitions."
 
 	await get_tree().create_timer(0.65).timeout
 	var fade_tween: Tween = create_tween()
