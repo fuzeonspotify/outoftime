@@ -102,7 +102,7 @@ func _build_startup_overlay() -> void:
 	stack.add_child(_startup_percent)
 
 	_startup_detail = UI_STYLE.make_label(
-		"Warming the soundtrack, chapter scenes, character scans, environment assets, and realistic bridge vehicle keeps the crash and gate finale uninterrupted.",
+		"Warming the soundtrack, chapter scenes, complete rigged lead characters, environment assets, and realistic bridge vehicle keeps the crash and gate finale uninterrupted.",
 		12,
 		UI_STYLE.COLOR_TEXT_DIM
 	)
@@ -131,7 +131,7 @@ func _on_startup_preload_completed(used_fallbacks: bool) -> void:
 	if used_fallbacks:
 		_startup_detail.text = "Some optional online assets were unavailable. Procedural character, vehicle, audio, or environment fallbacks are active."
 	else:
-		_startup_detail.text = "Soundtrack, chapter scenes, character models, realistic vehicle, and environments are warmed for uninterrupted play."
+		_startup_detail.text = "Soundtrack, chapter scenes, complete rigged lead characters, realistic vehicle, and environments are warmed for uninterrupted play."
 
 	await get_tree().create_timer(0.65).timeout
 	var fade_tween: Tween = create_tween()
