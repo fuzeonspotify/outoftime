@@ -1,6 +1,7 @@
 extends Node
 
 const CABLE_HIDE_DISTANCE: float = 34.0
+const DEFAULT_CAMERA_DISTANCE: float = 7.4
 
 var _bridge_cables: Array[MeshInstance3D] = []
 var _car: Node3D
@@ -8,7 +9,7 @@ var _car: Node3D
 
 func _ready() -> void:
 	SFXDirector.start_pontiac_ambience()
-	call_deferred("_configure_bridge_cables")
+	call_deferred("_configure_bridge_scene")
 
 
 func _process(_delta: float) -> void:
@@ -26,14 +27,19 @@ func _exit_tree() -> void:
 	SFXDirector.stop_environment(0.45)
 
 
-func _configure_bridge_cables() -> void:
+func _configure_bridge_scene() -> void:
 	var scene_root: Node = get_parent()
 	if scene_root == null:
 		return
 
+	scene_root.set("_camera_distance", DEFAULT_CAMERA_DISTANCE)
+	scene_root.set("_camera_target_distance", DEFAULT_CAMERA_DISTANCE)
 	_car = scene_root.get_node_or_null("SpectralPontiac") as Node3D
-	var mesh_nodes: Array[Node] = scene_root.find_children("*", "MeshInstance3D", true, false)
+	var camera: Camera3D = scene_root.get_node_or_null("SpectralPontiac/Camera3D") as Camera3D
+	if camera != null:
+		camera.position.z = DEFAULT_CAMERA_DISTANCE
 
+	var mesh_nodes: Array[Node] = scene_root.find_children("*", "MeshInstance3D", true, false)
 	for node: Node in mesh_nodes:
 		var mesh_instance: MeshInstance3D = node as MeshInstance3D
 		if mesh_instance == null:
