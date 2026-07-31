@@ -1,10 +1,12 @@
 extends Node
 
-const TARGET_CHARACTER_HEIGHT: float = 1.86
+const TARGET_CHARACTER_HEIGHT: float = 1.88
 
 var _player: CharacterBody3D
 var _model_root: Node3D
 var _skeleton: Skeleton3D
+var _animation_player: AnimationPlayer
+var _active_animation: StringName = &""
 var _bone_indices: Dictionary = {}
 var _walk_phase: float = 0.0
 
@@ -22,7 +24,10 @@ func _process(delta: float) -> void:
 		or not is_instance_valid(_skeleton)
 	):
 		return
-	_animate_rig(delta)
+	if _animation_player != null and is_instance_valid(_animation_player):
+		_update_embedded_animation()
+	else:
+		_animate_rig_fallback(delta)
 
 
 func _install_character() -> void:
@@ -46,13 +51,14 @@ func _install_character() -> void:
 		return
 
 	_hide_existing_meshes(visual_root)
-	complete_model.name = "RiggedMainCharacter"
+	complete_model.name = "RiggedMainSkeleton"
 	visual_root.add_child(complete_model)
 	_model_root = complete_model
 	_normalize_character(complete_model)
 	_prepare_materials(complete_model)
-	_stop_embedded_animation_players(complete_model)
+	_animation_player = _find_primary_animation_player(complete_model)
 	_cache_animation_bones()
+	_update_embedded_animation(true)
 
 
 func _find_primary_skeleton(model: Node3D) -> Skeleton3D:
@@ -61,12 +67,26 @@ func _find_primary_skeleton(model: Node3D) -> Skeleton3D:
 	var largest_bone_count: int = 0
 	for node: Node in skeleton_nodes:
 		var candidate: Skeleton3D = node as Skeleton3D
-		if candidate == null:
-			continue
-		if candidate.get_bone_count() <= largest_bone_count:
+		if candidate == null or candidate.get_bone_count() <= largest_bone_count:
 			continue
 		selected = candidate
 		largest_bone_count = candidate.get_bone_count()
+	return selected
+
+
+func _find_primary_animation_player(model: Node3D) -> AnimationPlayer:
+	var animation_nodes: Array[Node] = model.find_children("*", "AnimationPlayer", true, false)
+	var selected: AnimationPlayer
+	var largest_animation_count: int = 0
+	for node: Node in animation_nodes:
+		var candidate: AnimationPlayer = node as AnimationPlayer
+		if candidate == null:
+			continue
+		var animation_count: int = candidate.get_animation_list().size()
+		if animation_count <= largest_animation_count:
+			continue
+		selected = candidate
+		largest_animation_count = animation_count
 	return selected
 
 
@@ -118,24 +138,72 @@ func _prepare_materials(model: Node3D) -> void:
 		for surface_index: int in range(mesh_instance.mesh.get_surface_count()):
 			var source_material: Material = mesh_instance.get_active_material(surface_index)
 			var source_standard: StandardMaterial3D = source_material as StandardMaterial3D
-			var material: StandardMaterial3D = StandardMaterial3D.new()
-			if source_standard != null:
-				material = source_standard.duplicate() as StandardMaterial3D
+			if source_standard == null:
+				continue
+			var material: StandardMaterial3D = source_standard.duplicate() as StandardMaterial3D
 			if material == null:
-				material = StandardMaterial3D.new()
-			var source_color: Color = material.albedo_color
-			material.albedo_color = source_color.lerp(Color("b8b1a5"), 0.46)
-			material.roughness = maxf(material.roughness, 0.64)
-			material.metallic = minf(material.metallic, 0.08)
+				continue
+			material.roughness = maxf(material.roughness, 0.56)
+			material.metallic = minf(material.metallic, 0.10)
 			mesh_instance.set_surface_override_material(surface_index, material)
 
 
-func _stop_embedded_animation_players(model: Node3D) -> void:
-	var animation_nodes: Array[Node] = model.find_children("*", "AnimationPlayer", true, false)
-	for node: Node in animation_nodes:
-		var animation_player: AnimationPlayer = node as AnimationPlayer
-		if animation_player != null:
-			animation_player.stop()
+func _update_embedded_animation(force: bool = false) -> void:
+	if _animation_player == null:
+		return
+	var planar_speed: float = Vector2(_player.velocity.x, _player.velocity.z).length()
+	var target_keywords: Array[String]
+	var playback_speed: float = 1.0
+	if not _player.is_on_floor():
+		target_keywords = ["jump", "fall", "air"]
+		playback_speed = 1.0
+	elif planar_speed > float(_player.get("walk_speed")) + 0.8:
+		target_keywords = ["run", "sprint"]
+		playback_speed = clampf(planar_speed / 7.0, 0.85, 1.35)
+	elif planar_speed > 0.20:
+		target_keywords = ["walk", "move"]
+		playback_speed = clampf(planar_speed / 4.5, 0.72, 1.25)
+	else:
+		target_keywords = ["idle", "standing"]
+		playback_speed = 1.0
+
+	var target_animation: StringName = _find_animation(target_keywords)
+	if target_animation == &"":
+		target_animation = _first_usable_animation()
+	if target_animation == &"":
+		return
+	_animation_player.speed_scale = playback_speed
+	if not force and target_animation == _active_animation and _animation_player.is_playing():
+		return
+	_active_animation = target_animation
+	var animation: Animation = _animation_player.get_animation(target_animation)
+	if animation != null:
+		animation.loop_mode = Animation.LOOP_LINEAR
+	_animation_player.play(target_animation, 0.18, playback_speed)
+
+
+func _find_animation(keywords: Array[String]) -> StringName:
+	if _animation_player == null:
+		return &""
+	for animation_name_variant: Variant in _animation_player.get_animation_list():
+		var animation_name: StringName = StringName(str(animation_name_variant))
+		var descriptor: String = str(animation_name).to_lower()
+		if descriptor == "reset":
+			continue
+		for keyword: String in keywords:
+			if descriptor.contains(keyword):
+				return animation_name
+	return &""
+
+
+func _first_usable_animation() -> StringName:
+	if _animation_player == null:
+		return &""
+	for animation_name_variant: Variant in _animation_player.get_animation_list():
+		var animation_name: StringName = StringName(str(animation_name_variant))
+		if str(animation_name).to_lower() != "reset":
+			return animation_name
+	return &""
 
 
 func _cache_animation_bones() -> void:
@@ -144,12 +212,8 @@ func _cache_animation_bones() -> void:
 	_bone_indices["head"] = _find_bone(["head"])
 	_bone_indices["left_arm"] = _find_bone(["leftupperarm", "upperarml", "armleft", "lupperarm"])
 	_bone_indices["right_arm"] = _find_bone(["rightupperarm", "upperarmr", "armright", "rupperarm"])
-	_bone_indices["left_forearm"] = _find_bone(["leftforearm", "lowerarml", "forearml"])
-	_bone_indices["right_forearm"] = _find_bone(["rightforearm", "lowerarmr", "forearmr"])
 	_bone_indices["left_thigh"] = _find_bone(["leftupleg", "leftupperleg", "thighl", "upperlegl"])
 	_bone_indices["right_thigh"] = _find_bone(["rightupleg", "rightupperleg", "thighr", "upperlegr"])
-	_bone_indices["left_shin"] = _find_bone(["leftleg", "leftlowerleg", "calfl", "shinl"])
-	_bone_indices["right_shin"] = _find_bone(["rightleg", "rightlowerleg", "calfr", "shinr"])
 
 
 func _find_bone(aliases: Array[String]) -> int:
@@ -167,32 +231,18 @@ func _normalize_bone_name(bone_name: String) -> String:
 	return bone_name.to_lower().replace("mixamorig", "").replace("_", "").replace(".", "").replace("-", "").replace(" ", "")
 
 
-func _animate_rig(delta: float) -> void:
+func _animate_rig_fallback(delta: float) -> void:
 	var planar_speed: float = Vector2(_player.velocity.x, _player.velocity.z).length()
 	var sprint_speed_value: float = maxf(0.1, float(_player.get("sprint_speed")))
 	var movement_amount: float = clampf(planar_speed / sprint_speed_value, 0.0, 1.0)
 	_walk_phase += delta * lerpf(2.0, 9.4, movement_amount)
 	var swing: float = sin(_walk_phase) * 0.62 * movement_amount
-	var idle_breath: float = sin(float(Time.get_ticks_msec()) * 0.0018) * 0.035
-	var airborne_amount: float = 0.0 if _player.is_on_floor() else 1.0
-
-	_set_bone_rotation("left_arm", Vector3.RIGHT, -swing * 0.82 - airborne_amount * 0.18)
-	_set_bone_rotation("right_arm", Vector3.RIGHT, swing * 0.82 - airborne_amount * 0.18)
-	_set_bone_rotation("left_forearm", Vector3.RIGHT, maxf(0.0, swing) * 0.24)
-	_set_bone_rotation("right_forearm", Vector3.RIGHT, maxf(0.0, -swing) * 0.24)
-	_set_bone_rotation("left_thigh", Vector3.RIGHT, swing * 0.74 - airborne_amount * 0.22)
-	_set_bone_rotation("right_thigh", Vector3.RIGHT, -swing * 0.74 - airborne_amount * 0.22)
-	_set_bone_rotation("left_shin", Vector3.RIGHT, maxf(0.0, -swing) * 0.46 + airborne_amount * 0.24)
-	_set_bone_rotation("right_shin", Vector3.RIGHT, maxf(0.0, swing) * 0.46 + airborne_amount * 0.24)
-	_set_bone_rotation("spine", Vector3.FORWARD, idle_breath + sin(_walk_phase * 2.0) * 0.025 * movement_amount)
+	_set_bone_rotation("left_arm", Vector3.RIGHT, -swing * 0.82)
+	_set_bone_rotation("right_arm", Vector3.RIGHT, swing * 0.82)
+	_set_bone_rotation("left_thigh", Vector3.RIGHT, swing * 0.74)
+	_set_bone_rotation("right_thigh", Vector3.RIGHT, -swing * 0.74)
+	_set_bone_rotation("spine", Vector3.FORWARD, sin(_walk_phase * 2.0) * 0.025 * movement_amount)
 	_set_bone_rotation("head", Vector3.UP, sin(_walk_phase * 0.42) * 0.035 * (1.0 - movement_amount))
-
-	var hips_index: int = int(_bone_indices.get("hips", -1))
-	if hips_index >= 0:
-		_skeleton.set_bone_pose_position(
-			hips_index,
-			Vector3(0.0, absf(sin(_walk_phase * 2.0)) * 0.025 * movement_amount, 0.0)
-		)
 
 
 func _set_bone_rotation(key: String, axis: Vector3, angle: float) -> void:
