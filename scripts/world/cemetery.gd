@@ -141,7 +141,8 @@ func _build_memorial() -> void:
 
 func _build_woman_reveal() -> void:
 	_woman_visual = Node3D.new()
-	_woman_visual.position = Vector3(0.0, 0.0, -32.0)
+	_woman_visual.name = "MysteriousWoman"
+	_woman_visual.position = Vector3(0.0, 0.0, -27.2)
 	_woman_visual.visible = false
 	add_child(_woman_visual)
 
@@ -175,6 +176,7 @@ func _build_woman_reveal() -> void:
 	_woman_visual.add_child(reveal_light)
 
 	_woman_interaction = Area3D.new()
+	_woman_interaction.name = "WomanInteraction"
 	_woman_interaction.set_script(INTERACTABLE_SCRIPT)
 	_woman_interaction.set("prompt_text", "Speak to the woman")
 	_woman_interaction.set("interaction_message", "\"You're late,\" she whispers.\n\"But maybe this time will be different.\"")
@@ -208,7 +210,7 @@ func _on_memorial_activated(player: Node) -> void:
 	_woman_visual.visible = true
 	_woman_interaction.monitoring = true
 	if player.has_method("set_objective"):
-		player.call("set_objective", "Approach the woman beyond the cemetery gate.")
+		player.call("set_objective", "Approach the woman waiting near the cemetery gate.")
 
 	_woman_visual.scale = Vector3(0.01, 0.01, 0.01)
 	var tween: Tween = create_tween()
