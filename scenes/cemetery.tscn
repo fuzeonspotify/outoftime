@@ -1,8 +1,7 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/cemetery.gd" id="1_cemetery"]
 [ext_resource type="Script" path="res://scripts/world/cemetery_memorial_alignment.gd" id="2_memorial"]
-[ext_resource type="Script" path="res://scripts/story/prologue_director.gd" id="3_director"]
 [ext_resource type="Script" path="res://scripts/world/cemetery_audio.gd" id="4_audio"]
 [ext_resource type="Script" path="res://scripts/world/environment_art_pass.gd" id="5_art"]
 [ext_resource type="Script" path="res://scripts/world/cemetery_woman_model.gd" id="6_woman"]
@@ -18,9 +17,6 @@ script = ExtResource("1_cemetery")
 
 [node name="CemeteryMemorialAlignment" type="Node" parent="."]
 script = ExtResource("2_memorial")
-
-[node name="PrologueDirector" type="Node" parent="."]
-script = ExtResource("3_director")
 
 [node name="CemeteryAudio" type="Node" parent="."]
 script = ExtResource("4_audio")
