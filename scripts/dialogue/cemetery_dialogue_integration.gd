@@ -83,14 +83,15 @@ func _fade_to_memory_road() -> void:
 	transition_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	transition_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	transition_label.add_theme_font_size_override("font_size", 18)
-	transition_label.add_theme_color_override("font_color", Color(0.78, 0.70, 0.88, 0.0))
+	transition_label.add_theme_color_override("font_color", Color("bba4d1"))
 	transition_label.add_theme_color_override("font_outline_color", Color(0.0, 0.0, 0.0, 0.92))
 	transition_label.add_theme_constant_override("outline_size", 5)
+	transition_label.modulate = Color(1.0, 1.0, 1.0, 0.0)
 	canvas.add_child(transition_label)
 
 	var tween: Tween = create_tween().set_parallel(true)
 	tween.tween_property(fade_rect, "color", Color(0.008, 0.003, 0.015, 1.0), 1.15)
-	tween.tween_property(transition_label, "theme_override_colors/font_color", Color("bba4d1"), 0.75).set_delay(0.35)
+	tween.tween_property(transition_label, "modulate:a", 1.0, 0.75).set_delay(0.35)
 	await tween.finished
 	SFXDirector.stop_environment(0.4)
 	get_tree().change_scene_to_file(ROAD_SCENE_PATH)
