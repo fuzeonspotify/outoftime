@@ -67,15 +67,6 @@ func _style_label_for_context(label: Label) -> void:
 		UI_STYLE.apply_label(label, 15, UI_STYLE.COLOR_TEXT_MUTED, 2)
 		return
 
-	if (
-		clean_text == "Playable cemetery build ready."
-		or clean_text.begins_with("Audio placeholder active:")
-		or clean_text.begins_with("Now playing:")
-	):
-		label.visible = false
-		label.set_meta("release_styled", true)
-		return
-
 	var is_chapter_heading: bool = clean_text.contains("//") or clean_text.begins_with("CHAPTER")
 	var is_status: bool = (
 		clean_text.begins_with("MEMORY ")
