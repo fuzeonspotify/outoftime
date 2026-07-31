@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" path="res://scripts/world/memory_train.gd" id="1_train"]
+[ext_resource type="Script" path="res://scripts/world/memory_train_release.gd" id="1_train"]
 [ext_resource type="Script" path="res://scripts/ui/memory_train_pause.gd" id="2_pause"]
 
 [node name="MemoryTrain" type="Node3D"]
