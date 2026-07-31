@@ -18,7 +18,7 @@ func _apply_alignment() -> void:
 		"SkeletonPlayer":
 			_align_player_model(scene_root)
 		"RoadMemory":
-			_align_pontiac(scene_root)
+			_verify_exact_porsche(scene_root)
 		"Cemetery":
 			_hide_replaced_tree_geometry(scene_root)
 
@@ -27,28 +27,19 @@ func _align_player_model(player_root: Node3D) -> void:
 	var visual_root: Node3D = player_root.get_node_or_null("SkeletonVisual") as Node3D
 	if visual_root == null:
 		return
-	var external_model: Node3D = visual_root.get_node_or_null("ExternalSkeletonModel") as Node3D
-	if external_model != null:
-		external_model.rotation_degrees.y = 0.0
-	var left_leg: Node3D = visual_root.get_node_or_null("DetailedSkeletonModel/LeftLeg") as Node3D
-	var right_leg: Node3D = visual_root.get_node_or_null("DetailedSkeletonModel/RightLeg") as Node3D
-	if left_leg != null:
-		left_leg.position.y = 1.28
-	if right_leg != null:
-		right_leg.position.y = 1.28
+	var complete_rig: Node3D = visual_root.get_node_or_null("RiggedMainSkeleton") as Node3D
+	if complete_rig == null:
+		push_error("REQUIRED MODEL ERROR: RiggedMainSkeleton was not installed. No substitute skeleton is allowed.")
 
 
-func _align_pontiac(road_root: Node3D) -> void:
+func _verify_exact_porsche(road_root: Node3D) -> void:
 	var pontiac: Node3D = road_root.get_node_or_null("SpectralPontiac") as Node3D
 	if pontiac == null:
+		push_error("REQUIRED MODEL ERROR: the bridge vehicle root was not created.")
 		return
-	var imported_model: Node3D = pontiac.get_node_or_null("KenneyCC0Car") as Node3D
-	if imported_model != null:
-		# The imported car faces positive Z, while the bridge drives toward negative Z.
-		imported_model.rotation_degrees.y = 180.0
-	var fallback_model: Node3D = pontiac.get_node_or_null("ModeledPontiacFallback") as Node3D
-	if fallback_model != null:
-		fallback_model.position.y = -0.22
+	var porsche: Node3D = pontiac.get_node_or_null("Porsche911Turbo") as Node3D
+	if porsche == null:
+		push_error("REQUIRED MODEL ERROR: Porsche911Turbo is missing. No backup vehicle is allowed.")
 
 
 func _hide_replaced_tree_geometry(cemetery_root: Node3D) -> void:
