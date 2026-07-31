@@ -4,15 +4,15 @@
 
 > You were never the first.
 
-You play as a skeleton who wakes in a surreal afterlife and follows a mysterious woman through memories that feel increasingly rehearsed. What begins as a rescue becomes a cycle: a cemetery, a spectral Pontiac ride, a fatal bridge crash, a Heaven that reveals itself as a lie, a ruined nightclub and a chamber filled with the people who followed her before.
+You play as a skeleton who wakes in a surreal afterlife and follows a mysterious woman through memories that feel increasingly rehearsed. What begins as a rescue becomes a cycle: a cemetery, a spectral car ride, a fatal bridge crash, a Heaven that reveals itself as a lie, a ruined nightclub and a chamber filled with the people who followed her before.
 
 ## Playable experience
 
 The current Godot 4 project contains a connected five-chapter vertical slice:
 
 1. **The Cemetery** — awaken, examine the memorial and question the woman at the gate.
-2. **The Memory Road** — steer a real CC0 car model through failed memories before the bridge collapses into a cinematic crash.
-3. **The Welcome** — wake in a Heaven-like procession where walking toward the distant gate darkens the atmosphere and corrupts the angels, while turning back restores them.
+2. **The Memory Road** — steer a detailed runtime-loaded car through failed memories before the bridge collapses into a cinematic crash.
+3. **The Welcome** — wake in a Heaven-like procession where walking toward the distant gate corrupts the atmosphere and angels, while turning back restores them.
 4. **The Ruined Club** — restore three breakers while the spectral crowd closes in.
 5. **The Chamber** — recover the journals and confront the truth behind the cycle.
 
@@ -23,23 +23,26 @@ The build includes:
 - Branching conversations with multiple responses and outcome-specific objectives
 - Cinematic dialogue cameras, close-ups, two-shots, wide shots and letterbox presentation
 - A seamless bridge-to-crash-to-Heaven transition with no completion menu between chapters
-- A startup-cached CC0 Kenney vehicle with a procedural offline fallback
+- A detailed Khronos Car Concept vehicle with Kenney and procedural fallbacks
 - Crash camera cuts, guardrail destruction, screen shake, tire screech, metal impact, glass and tinnitus effects
 - A fully reversible position-driven corruption system for lighting, fog, architecture, plants, particles, audio and NPC behavior
 - Twenty-six angel NPCs whose halos, wings, eyes, horns, posture and attention transform continuously into demonic forms
+- A first-person final-gate jumpscare in which a dark angel grabs the player and starts a seven-key W/A/S/D survival sequence
+- Three complete QTE attempts, a death/restart outcome and a permanent golden purification outcome
 - Directional headphone whispers and a choir/drone mix that changes with the player's location
+- A runtime-loaded CC0 scanned skull for the player and a spectral PBR female mannequin/corset base for the ghost woman
 - Typewriter dialogue pacing, numbered response shortcuts and dedicated choice feedback
 - Chapter objectives, narrative message cards and memory-signal HUD effects
 - Pause, restart chapter, return-to-title and quit controls throughout the game
 - Headphone-focused Music, Ambience, SFX, Dialogue and UI buses
-- Runtime-loaded optional CC0 Kenney assets with procedural fallbacks
+- Runtime-loaded optional assets with procedural fallbacks
 - Responsive 16:9-first UI that expands safely to wider and taller windows
 
 ## Controls
 
 | Input | Action |
 | --- | --- |
-| `WASD` | Move or steer |
+| `WASD` | Move, steer or complete the gate survival sequence |
 | Mouse | Rotate camera |
 | Mouse wheel | Adjust the Memory Road camera |
 | `Shift` | Sprint |
@@ -57,7 +60,7 @@ The build includes:
 4. Press **F5**.
 5. Select **BEGIN STORY**.
 
-The first launch can take longer while optional sound, environment and car assets are cached. The CC0 car archive is prepared before Begin Story becomes available, so the bridge crash does not download or unpack files during gameplay. Procedural vehicle, geometry and audio fallbacks keep the complete story playable offline.
+The first launch can take longer while optional sound, environment, character and vehicle assets are cached. These assets are prepared before Begin Story becomes available, so the bridge crash and Heaven finale do not download or unpack files during gameplay. Procedural character, vehicle, geometry and audio fallbacks keep the complete story playable offline.
 
 ## Optional local music
 
@@ -85,11 +88,11 @@ The audio files are ignored by Git so unreleased master recordings are not publi
 ## Technical direction
 
 - Engine: Godot 4.7
-- Visual style: stylized neon afterlife with fog, memory-signal UI and cinematic lighting
+- Visual style: stylized neon afterlife with realistic focal models, fog, memory-signal UI and cinematic lighting
 - Primary target: Windows desktop
 - Rendering: GL Compatibility
 - Scope: one focused short experience rather than a large unfinished game
 
 ## Asset provenance
 
-Kenney model sources are documented under `assets/models/kenney/`. The bridge car comes from Kenney's **Car Kit**, released under Creative Commons CC0. Runtime sound sources, licenses and cache behavior are documented in `assets/audio/CC0_AUDIO_LIBRARY.md`. Source records are retained for provenance even where attribution is not required.
+Runtime sound sources and licenses are documented in `assets/audio/CC0_AUDIO_LIBRARY.md`. Kenney environment and fallback-vehicle sources are documented under `assets/models/kenney/`. The realistic skull, ghost-woman base and Car Concept source records are documented in `assets/models/REALISTIC_MODEL_SOURCES.md`. The Car Concept model requires CC BY 4.0 attribution in distributed credits.
