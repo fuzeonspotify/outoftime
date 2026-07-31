@@ -1,17 +1,8 @@
 extends "res://scripts/world/road_memory_final_cut.gd"
 
 const REQUIRED_CAR_NODE_NAME: String = "Porsche911Turbo"
+const BODY_MESH_NODE_NAME: String = "car_body"
 const METALLIC_RED: Color = Color("d0182b")
-const BODY_MATERIAL_NAMES: Array[String] = [
-	"material.005",
-	"material_005",
-	"carpaint",
-	"car_paint",
-	"bodypaint",
-	"body_paint",
-	"exteriorpaint",
-	"exterior_paint"
-]
 const LEGACY_CAR_NODE_NAMES: Array[String] = [
 	"ModeledPontiacFallback",
 	"KenneyCC0Car",
@@ -58,64 +49,43 @@ func _build_car() -> void:
 
 func _paint_car_metallic_red(model_root: Node3D) -> void:
 	var mesh_nodes: Array[Node] = model_root.find_children("*", "MeshInstance3D", true, false)
-	var primary_body_mesh: MeshInstance3D
+	var body_mesh: MeshInstance3D
+	var fallback_mesh: MeshInstance3D
 	var largest_surface_count: int = -1
 
-	# In this Porsche GLB the main shell is surface 0 of the mesh containing
-	# all nine vehicle materials. Find that mesh structurally instead of relying
-	# only on an importer-generated material class or name.
 	for node: Node in mesh_nodes:
 		var mesh_instance: MeshInstance3D = node as MeshInstance3D
 		if mesh_instance == null or mesh_instance.mesh == null:
 			continue
+
+		# Whole-mesh overrides take priority over all surface overrides. The old
+		# environment pass installed one of these, which is why previous paint
+		# changes never appeared.
+		mesh_instance.material_override = null
+
+		var node_name: String = str(mesh_instance.name).to_lower()
+		if node_name == BODY_MESH_NODE_NAME or node_name.contains(BODY_MESH_NODE_NAME):
+			body_mesh = mesh_instance
+
 		var surface_count: int = mesh_instance.mesh.get_surface_count()
 		if surface_count > largest_surface_count:
 			largest_surface_count = surface_count
-			primary_body_mesh = mesh_instance
+			fallback_mesh = mesh_instance
 
-	var painted_surfaces: int = 0
-	if primary_body_mesh != null and largest_surface_count > 0:
-		if _apply_metallic_red(primary_body_mesh, 0):
-			painted_surfaces += 1
+	if body_mesh == null:
+		body_mesh = fallback_mesh
+	if body_mesh == null or body_mesh.mesh == null or body_mesh.mesh.get_surface_count() == 0:
+		push_error("PORSCHE PAINT ERROR: the imported car_body mesh was not found.")
+		return
 
-	# Also cover body surfaces by material semantics in case a later textured GLB
-	# splits the shell into multiple surfaces.
-	for node: Node in mesh_nodes:
-		var mesh_instance: MeshInstance3D = node as MeshInstance3D
-		if mesh_instance == null or mesh_instance.mesh == null:
-			continue
-		for surface_index: int in range(mesh_instance.mesh.get_surface_count()):
-			if mesh_instance == primary_body_mesh and surface_index == 0:
-				continue
-			var source_material: Material = mesh_instance.get_active_material(surface_index)
-			var source_base: BaseMaterial3D = source_material as BaseMaterial3D
-			if source_base == null or source_base.emission_enabled:
-				continue
-			var material_name: String = str(source_material.resource_name).to_lower()
-			var source_color: Color = source_base.albedo_color
-			var known_body_material: bool = BODY_MATERIAL_NAMES.has(material_name)
-			var semantic_body_material: bool = (
-				material_name.contains("paint")
-				or material_name.contains("body")
-				or material_name.contains("exterior")
-				or material_name.contains("shell")
-			)
-			var red_dominant_surface: bool = (
-				source_color.r > 0.18
-				and source_color.r > source_color.g * 2.0
-				and source_color.r > source_color.b * 2.0
-			)
-			if not known_body_material and not semantic_body_material and not red_dominant_surface:
-				continue
-			if _apply_metallic_red(mesh_instance, surface_index):
-				painted_surfaces += 1
-
-	if painted_surfaces == 0:
-		push_error("PORSCHE PAINT ERROR: the main shell surface could not be overridden.")
+	# The supplied GLB maps Material.005 (the exterior shell) to surface 0 of
+	# car_body. Targeting this exact surface avoids changing glass, tires, chrome,
+	# headlights, taillights, or the interior.
+	_apply_metallic_red(body_mesh, 0)
 
 
-func _apply_metallic_red(mesh_instance: MeshInstance3D, surface_index: int) -> bool:
-	var source_material: Material = mesh_instance.get_active_material(surface_index)
+func _apply_metallic_red(mesh_instance: MeshInstance3D, surface_index: int) -> void:
+	var source_material: Material = mesh_instance.mesh.surface_get_material(surface_index)
 	var painted_material: BaseMaterial3D
 	if source_material != null:
 		painted_material = source_material.duplicate() as BaseMaterial3D
@@ -124,9 +94,20 @@ func _apply_metallic_red(mesh_instance: MeshInstance3D, surface_index: int) -> b
 
 	painted_material.albedo_color = METALLIC_RED
 	painted_material.metallic = 1.0
-	painted_material.roughness = 0.16
+	painted_material.roughness = 0.12
+	painted_material.emission_enabled = false
+	mesh_instance.material_override = null
 	mesh_instance.set_surface_override_material(surface_index, painted_material)
-	return true
+
+
+func _clear_porsche_whole_mesh_overrides() -> void:
+	if _real_car_visual == null or not is_instance_valid(_real_car_visual):
+		return
+	var mesh_nodes: Array[Node] = _real_car_visual.find_children("*", "MeshInstance3D", true, false)
+	for node: Node in mesh_nodes:
+		var mesh_instance: MeshInstance3D = node as MeshInstance3D
+		if mesh_instance != null:
+			mesh_instance.material_override = null
 
 
 func _remove_existing_bridge_car() -> void:
@@ -140,11 +121,15 @@ func _remove_existing_bridge_car() -> void:
 
 
 func _enforce_exact_car_only() -> void:
-	# Older presentation/model helpers can run several frames after the road scene.
-	# Purge them after every likely deferred installation window.
-	for _frame_index: int in range(24):
+	# Wait through every deferred scene-art installation window, removing legacy
+	# geometry and any whole-mesh material override each frame. Repaint once more
+	# after those systems have finished.
+	for _frame_index: int in range(32):
 		await get_tree().process_frame
 		_purge_non_porsche_geometry()
+		_clear_porsche_whole_mesh_overrides()
+	if _real_car_visual != null and is_instance_valid(_real_car_visual):
+		_paint_car_metallic_red(_real_car_visual)
 
 
 func _purge_non_porsche_geometry() -> void:
