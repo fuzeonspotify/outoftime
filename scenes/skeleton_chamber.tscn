@@ -1,6 +1,10 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/skeleton_chamber.gd" id="1_chamber"]
+[ext_resource type="Script" path="res://scripts/world/environment_art_pass.gd" id="2_art"]
 
 [node name="SkeletonChamber" type="Node3D"]
 script = ExtResource("1_chamber")
+
+[node name="EnvironmentArtPass" type="Node" parent="."]
+script = ExtResource("2_art")
