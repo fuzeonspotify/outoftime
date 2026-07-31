@@ -1,4 +1,4 @@
-# Godot-generated files
+# Godot-generated cache files
 .godot/
 .import/
 export.cfg
@@ -10,11 +10,12 @@ export_presets.cfg
 .DS_Store
 Thumbs.db
 
-# Keep unreleased/master audio out of the public repository
+# Keep unreleased/master audio and its machine-local import metadata out of the public repository
 assets/audio/local/*.wav
 assets/audio/local/*.flac
 assets/audio/local/*.mp3
 assets/audio/local/*.ogg
+assets/audio/local/*.ogg.import
 
 # Build output
 builds/
