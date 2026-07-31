@@ -23,6 +23,12 @@ SFXDirector="*res://scripts/audio/sfx_director.gd"
 DialogueDirector="*res://scripts/dialogue/dialogue_director.gd"
 CinematicPlayerLock="*res://scripts/dialogue/cinematic_player_lock.gd"
 
+[debug]
+
+gdscript/warnings/integer_division=0
+gdscript/warnings/shadowed_global_identifier=0
+gdscript/warnings/shadowed_variable_base_class=0
+
 [display]
 
 window/size/viewport_width=1280
