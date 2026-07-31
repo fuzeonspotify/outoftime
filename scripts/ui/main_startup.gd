@@ -16,10 +16,7 @@ func _ready() -> void:
 	_begin_button.disabled = true
 	StartupPreloader.progress_changed.connect(_on_startup_progress_changed)
 	StartupPreloader.preload_completed.connect(_on_startup_preload_completed)
-	_on_startup_progress_changed(
-		StartupPreloader.get_progress(),
-		StartupPreloader.get_status()
-	)
+	_on_startup_progress_changed(StartupPreloader.get_progress(), StartupPreloader.get_status())
 	if StartupPreloader.is_ready():
 		_on_startup_preload_completed(StartupPreloader.used_fallbacks())
 
@@ -42,7 +39,7 @@ func _rewrite_story_copy() -> void:
 			"CEMETERY  •  MEMORY BRIDGE  •  VOID  •  RUINED CLUB  •  CHAMBER":
 				label.text = "CEMETERY  •  MEMORY ROAD  •  FALSE HEAVEN  •  RUINED CLUB  •  CHAMBER"
 			"WASD\nMove\n\nSHIFT\nSprint\n\nSPACE\nJump\n\nE\nHold to interact\n\nESC\nPause":
-				label.text = "WASD\nMove / steer\n\nSHIFT\nSprint\n\nSPACE\nJump\n\nE\nHold to interact\n\nESC\nPause"
+				label.text = "WASD\nMove / survive\n\nSHIFT\nSprint\n\nSPACE\nJump\n\nE\nHold to interact\n\nESC\nPause"
 
 
 func _build_startup_overlay() -> void:
@@ -78,11 +75,7 @@ func _build_startup_overlay() -> void:
 	stack.add_theme_constant_override("separation", 18)
 	_startup_panel.add_child(stack)
 
-	var eyebrow: Label = UI_STYLE.make_label(
-		"OUT OF TIME  //  MEMORY ARCHIVE",
-		13,
-		UI_STYLE.COLOR_ACCENT_COOL
-	)
+	var eyebrow: Label = UI_STYLE.make_label("OUT OF TIME  //  MEMORY ARCHIVE", 13, UI_STYLE.COLOR_ACCENT_COOL)
 	eyebrow.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	stack.add_child(eyebrow)
 
@@ -109,7 +102,7 @@ func _build_startup_overlay() -> void:
 	stack.add_child(_startup_percent)
 
 	_startup_detail = UI_STYLE.make_label(
-		"Warming the soundtrack, chapter scenes, environment assets, and the CC0 bridge vehicle now keeps the crash and Heaven transition uninterrupted.",
+		"Warming the soundtrack, chapter scenes, character scans, environment assets, and realistic bridge vehicle keeps the crash and gate finale uninterrupted.",
 		12,
 		UI_STYLE.COLOR_TEXT_DIM
 	)
@@ -136,9 +129,9 @@ func _on_startup_preload_completed(used_fallbacks: bool) -> void:
 	_startup_percent.text = "100%"
 	_startup_status.text = "MEMORY ARCHIVE READY"
 	if used_fallbacks:
-		_startup_detail.text = "Some optional online assets were unavailable. Procedural audio, vehicle, or environment fallbacks are active."
+		_startup_detail.text = "Some optional online assets were unavailable. Procedural character, vehicle, audio, or environment fallbacks are active."
 	else:
-		_startup_detail.text = "Soundtrack, chapter scenes, the bridge vehicle, and environments are warmed for uninterrupted transitions."
+		_startup_detail.text = "Soundtrack, chapter scenes, character models, realistic vehicle, and environments are warmed for uninterrupted play."
 
 	await get_tree().create_timer(0.65).timeout
 	var fade_tween: Tween = create_tween()
