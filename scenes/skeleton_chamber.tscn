@@ -5,7 +5,7 @@
 [ext_resource type="Script" path="res://scripts/world/interaction_release_polish.gd" id="5_interactions"]
 [ext_resource type="Script" path="res://scripts/dialogue/chamber_dialogue_integration.gd" id="6_dialogue"]
 [ext_resource type="Script" path="res://scripts/models/rigged_ghost_woman.gd" id="7_rigged_woman"]
-[ext_resource type="Script" path="res://scripts/models/realistic_environment_replacements.gd" id="8_exact_environment"]
+[ext_resource type="Script" path="res://scripts/models/realistic_environment_replacements_release.gd" id="8_exact_environment"]
 
 [node name="SkeletonChamber" type="Node3D"]
 script = ExtResource("1_chamber")
