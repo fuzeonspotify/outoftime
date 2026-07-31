@@ -45,7 +45,7 @@ func _apply_release_copy() -> void:
 		if label == null:
 			continue
 		if label.text.contains("opens into a city that should not exist") or label.text.contains("gravity has been torn apart"):
-			label.text = "The memory road ends at a crossing no living train could reach."
+			label.text = "The bridge keeps driving toward an ending you cannot remember."
 		elif label.text == "PONTIAC  //  MEMORY BRIDGE":
 			label.text = "CHAPTER II  //  THE MEMORY ROAD"
 		elif label.text.contains("DODGE THE DEAD"):
@@ -57,10 +57,7 @@ func _apply_release_copy() -> void:
 		var button: Button = node as Button
 		if button == null:
 			continue
-		if button.text == "ENTER THE CITY" or button.text == "ENTER THE VOID":
-			button.text = "BOARD THE MEMORY TRAIN"
-		var is_primary: bool = button.text == "BOARD THE MEMORY TRAIN"
-		UI_STYLE.apply_button(button, is_primary)
+		UI_STYLE.apply_button(button, button.text == "RESUME")
 
 
 func _style_label(label: Label) -> void:
@@ -70,7 +67,7 @@ func _style_label(label: Label) -> void:
 	var text_value: String = label.text.strip_edges()
 	if text_value.begins_with("CHAPTER II"):
 		UI_STYLE.apply_label(label, 22, UI_STYLE.COLOR_TEXT, 5)
-	elif text_value.begins_with("MEMORY DISTANCE"):
+	elif text_value.begins_with("MEMORY DISTANCE") or text_value.begins_with("BRIDGE SIGNAL"):
 		UI_STYLE.apply_label(label, 15, UI_STYLE.COLOR_ACCENT_COOL, 3)
 	elif text_value.begins_with("MEMORY INTEGRITY"):
 		UI_STYLE.apply_label(label, 15, UI_STYLE.COLOR_ACCENT, 3)
