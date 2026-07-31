@@ -1,7 +1,7 @@
 extends Node
 
 const SAMPLE_RATE: int = 22050
-const ONE_SHOT_POOL_SIZE: int = 6
+const ONE_SHOT_POOL_SIZE: int = 10
 
 var _ambience_player: AudioStreamPlayer
 var _detail_player: AudioStreamPlayer
@@ -9,6 +9,7 @@ var _music_bed_player: AudioStreamPlayer
 var _one_shot_players: Array[AudioStreamPlayer] = []
 var _one_shot_index: int = 0
 var _current_environment: StringName = &""
+var _dialogue_ducked: bool = false
 
 var _wind_stream: AudioStreamWAV
 var _lantern_stream: AudioStreamWAV
@@ -28,17 +29,20 @@ var _tracked_player: CharacterBody3D
 var _was_on_floor: bool = false
 var _step_timer: float = 0.0
 var _environment_detail_timer: float = 7.0
+var _ui_hover_cooldown: float = 0.0
+var _dialogue_tick_cooldown: float = 0.0
 var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 
 func _ready() -> void:
 	_rng.seed = 904211
-	_ambience_player = _create_player("EnvironmentAmbience", 0.22)
-	_detail_player = _create_player("EnvironmentDetail", 0.13)
-	_music_bed_player = _create_player("EnvironmentMusicBed", 0.0)
+	_build_audio_buses()
+	_ambience_player = _create_player("EnvironmentAmbience", 0.22, "Ambience")
+	_detail_player = _create_player("EnvironmentDetail", 0.13, "Ambience")
+	_music_bed_player = _create_player("EnvironmentMusicBed", 0.0, "Ambience")
 
 	for index: int in range(ONE_SHOT_POOL_SIZE):
-		var player: AudioStreamPlayer = _create_player("SFXPlayer%d" % (index + 1), 0.35)
+		var player: AudioStreamPlayer = _create_player("SFXPlayer%d" % (index + 1), 0.35, "SFX")
 		_one_shot_players.append(player)
 
 	_wind_stream = _build_wind_stream()
@@ -58,6 +62,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_ui_hover_cooldown = maxf(0.0, _ui_hover_cooldown - delta)
+	_dialogue_tick_cooldown = maxf(0.0, _dialogue_tick_cooldown - delta)
 	_update_player_sfx(delta)
 	_update_environment_details(delta)
 
@@ -69,7 +75,7 @@ func start_cemetery_ambience() -> void:
 	_start_loop(_ambience_player, _wind_stream, 0.20)
 	_start_loop(_detail_player, _lantern_stream, 0.10)
 	_start_loop(_music_bed_player, _cemetery_music_stream, 0.085)
-	_environment_detail_timer = _rng.randf_range(5.0, 10.0)
+	_environment_detail_timer = _rng.randf_range(4.0, 8.0)
 
 
 func start_pontiac_ambience() -> void:
@@ -82,13 +88,37 @@ func start_pontiac_ambience() -> void:
 
 
 func start_city_ambience() -> void:
-	if _current_environment == &"city" and _ambience_player.playing:
+	start_void_ambience()
+
+
+func start_void_ambience() -> void:
+	if _current_environment == &"void" and _ambience_player.playing:
 		return
-	_current_environment = &"city"
-	_start_loop(_ambience_player, _city_stream, 0.18)
-	_start_loop(_detail_player, _city_electric_stream, 0.075)
+	_current_environment = &"void"
+	_start_loop(_ambience_player, _city_stream, 0.15)
+	_start_loop(_detail_player, _city_electric_stream, 0.060)
 	_music_bed_player.stop()
-	_environment_detail_timer = _rng.randf_range(8.0, 15.0)
+	_environment_detail_timer = _rng.randf_range(4.5, 9.0)
+
+
+func start_club_ambience() -> void:
+	if _current_environment == &"club" and _ambience_player.playing:
+		return
+	_current_environment = &"club"
+	_start_loop(_ambience_player, _city_stream, 0.105)
+	_start_loop(_detail_player, _city_electric_stream, 0.055)
+	_music_bed_player.stop()
+	_environment_detail_timer = _rng.randf_range(5.0, 10.0)
+
+
+func start_chamber_ambience() -> void:
+	if _current_environment == &"chamber" and _ambience_player.playing:
+		return
+	_current_environment = &"chamber"
+	_start_loop(_ambience_player, _wind_stream, 0.10)
+	_start_loop(_detail_player, _lantern_stream, 0.045)
+	_music_bed_player.stop()
+	_environment_detail_timer = _rng.randf_range(5.0, 11.0)
 
 
 func stop_environment(fade_seconds: float = 0.5) -> void:
@@ -98,28 +128,118 @@ func stop_environment(fade_seconds: float = 0.5) -> void:
 	_fade_out_player(_music_bed_player, fade_seconds)
 
 
+func duck_for_dialogue(enabled: bool) -> void:
+	_dialogue_ducked = enabled
+	var ambience_target: float = 0.045 if enabled else _resolved_ambience_volume()
+	var detail_target: float = 0.020 if enabled else _resolved_detail_volume()
+	var bed_target: float = 0.025 if enabled else (0.085 if _current_environment == &"cemetery" else 0.0)
+	var tween: Tween = create_tween().set_parallel(true)
+	tween.tween_property(_ambience_player, "volume_linear", ambience_target, 0.35)
+	tween.tween_property(_detail_player, "volume_linear", detail_target, 0.35)
+	tween.tween_property(_music_bed_player, "volume_linear", bed_target, 0.35)
+
+
 func play_footstep(intensity: float = 0.5) -> void:
+	var external_cue: String = "footstep_grass" if _current_environment == &"cemetery" else "footstep_concrete"
+	var external_stream: AudioStream = OnlineAudioLibrary.get_stream(external_cue)
 	var player: AudioStreamPlayer = _next_one_shot_player()
-	player.stream = _footstep_stream
-	player.volume_linear = lerpf(0.16, 0.28, clampf(intensity, 0.0, 1.0))
+	player.stream = external_stream if external_stream != null else _footstep_stream
+	player.bus = "SFX"
+	player.volume_linear = lerpf(0.10, 0.22, clampf(intensity, 0.0, 1.0))
 	player.pitch_scale = _rng.randf_range(0.92, 1.08)
 	player.play()
 
 
-func play_interaction() -> void:
-	_play_one_shot(_interaction_stream, 0.32, _rng.randf_range(0.97, 1.03))
+func play_interaction(context: String = "") -> void:
+	var normalized_context: String = context.to_upper()
+	var cue_id: String = "ui_confirm"
+	if normalized_context.contains("READ") or normalized_context.contains("EXAMINE"):
+		cue_id = "interaction_read"
+	elif normalized_context.contains("RESTORE"):
+		cue_id = "interaction_restore"
+	elif normalized_context.contains("STABILIZE"):
+		cue_id = "interaction_stabilize"
+	var external_stream: AudioStream = OnlineAudioLibrary.get_stream(cue_id)
+	_play_one_shot(external_stream if external_stream != null else _interaction_stream, 0.28, _rng.randf_range(0.97, 1.03), "SFX")
 
 
 func play_reveal() -> void:
-	_play_one_shot(_reveal_stream, 0.36, 1.0)
+	var external_stream: AudioStream = OnlineAudioLibrary.get_stream("reveal")
+	_play_one_shot(external_stream if external_stream != null else _reveal_stream, 0.34, 1.0, "SFX")
+
+
+func play_transition() -> void:
+	var external_stream: AudioStream = OnlineAudioLibrary.get_stream("transition")
+	_play_one_shot(external_stream if external_stream != null else _reveal_stream, 0.30, 0.96, "SFX")
 
 
 func play_jump() -> void:
-	_play_one_shot(_jump_stream, 0.20, _rng.randf_range(0.96, 1.04))
+	_play_one_shot(_jump_stream, 0.16, _rng.randf_range(0.96, 1.04), "SFX")
 
 
 func play_land() -> void:
-	_play_one_shot(_land_stream, 0.28, _rng.randf_range(0.94, 1.02))
+	var external_stream: AudioStream = OnlineAudioLibrary.get_stream("impact_metal")
+	_play_one_shot(external_stream if external_stream != null else _land_stream, 0.20, _rng.randf_range(0.90, 1.02), "SFX")
+
+
+func play_ui_hover() -> void:
+	if _ui_hover_cooldown > 0.0:
+		return
+	_ui_hover_cooldown = 0.055
+	var stream: AudioStream = OnlineAudioLibrary.get_stream("ui_hover")
+	if stream != null:
+		_play_one_shot(stream, 0.11, _rng.randf_range(0.98, 1.04), "UI")
+	else:
+		_play_one_shot(_interaction_stream, 0.065, 1.22, "UI")
+
+
+func play_ui_confirm() -> void:
+	var stream: AudioStream = OnlineAudioLibrary.get_stream("ui_confirm")
+	_play_one_shot(stream if stream != null else _interaction_stream, 0.18, 1.0, "UI")
+
+
+func play_ui_cancel() -> void:
+	var stream: AudioStream = OnlineAudioLibrary.get_stream("ui_cancel")
+	_play_one_shot(stream if stream != null else _interaction_stream, 0.15, 0.82, "UI")
+
+
+func play_dialogue_tick() -> void:
+	if _dialogue_tick_cooldown > 0.0:
+		return
+	_dialogue_tick_cooldown = 0.045
+	var stream: AudioStream = OnlineAudioLibrary.get_stream("dialogue_tick")
+	if stream != null:
+		_play_one_shot(stream, 0.045, _rng.randf_range(1.12, 1.28), "Dialogue")
+
+
+func play_dialogue_choice() -> void:
+	var stream: AudioStream = OnlineAudioLibrary.get_stream("dialogue_choice")
+	_play_one_shot(stream if stream != null else _interaction_stream, 0.18, 1.04, "Dialogue")
+
+
+func play_world_cue(
+	cue_id: String,
+	world_position: Vector3,
+	volume: float = 0.18,
+	pitch: float = 1.0,
+	max_distance: float = 28.0
+) -> void:
+	var stream: AudioStream = OnlineAudioLibrary.get_stream(cue_id)
+	if stream == null:
+		return
+	var player: AudioStreamPlayer3D = AudioStreamPlayer3D.new()
+	player.name = "WorldSFX_%s" % cue_id
+	player.stream = stream
+	player.position = world_position
+	player.volume_linear = volume
+	player.pitch_scale = pitch
+	player.max_distance = max_distance
+	player.unit_size = 4.0
+	player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+	player.bus = "SFX"
+	add_child(player)
+	player.finished.connect(Callable(player, "queue_free"))
+	player.play()
 
 
 func _on_music_cue_started(cue_id: String) -> void:
@@ -160,24 +280,109 @@ func _update_player_sfx(delta: float) -> void:
 
 
 func _update_environment_details(delta: float) -> void:
-	if _current_environment != &"cemetery" and _current_environment != &"city":
+	if _current_environment == &"" or _tracked_player == null or _dialogue_ducked:
 		return
 	_environment_detail_timer -= delta
 	if _environment_detail_timer > 0.0:
 		return
 
-	if _current_environment == &"cemetery":
-		_play_one_shot(_creak_stream, 0.11, _rng.randf_range(0.82, 1.12))
-		_environment_detail_timer = _rng.randf_range(6.0, 14.0)
-	else:
-		_play_one_shot(_city_siren_stream, 0.075, _rng.randf_range(0.90, 1.05))
-		_environment_detail_timer = _rng.randf_range(11.0, 22.0)
+	var angle: float = _rng.randf_range(0.0, TAU)
+	var radius: float = _rng.randf_range(7.0, 16.0)
+	var detail_position: Vector3 = _tracked_player.global_position + Vector3(cos(angle) * radius, _rng.randf_range(0.5, 4.0), sin(angle) * radius)
+	match _current_environment:
+		&"cemetery":
+			var creak_stream: AudioStream = OnlineAudioLibrary.get_stream("creak")
+			if creak_stream != null:
+				play_world_cue("creak", detail_position, 0.12, _rng.randf_range(0.88, 1.08), 25.0)
+			else:
+				_play_one_shot(_creak_stream, 0.08, _rng.randf_range(0.82, 1.12), "Ambience")
+			_environment_detail_timer = _rng.randf_range(5.0, 12.0)
+		&"void":
+			play_world_cue("void_pulse", detail_position, 0.12, _rng.randf_range(0.82, 1.08), 40.0)
+			_environment_detail_timer = _rng.randf_range(4.0, 9.0)
+		&"club":
+			play_world_cue("impact_metal", detail_position, 0.09, _rng.randf_range(0.82, 1.12), 32.0)
+			_environment_detail_timer = _rng.randf_range(5.0, 11.0)
+		&"chamber":
+			play_world_cue("journal", detail_position, 0.08, _rng.randf_range(0.82, 1.04), 28.0)
+			_environment_detail_timer = _rng.randf_range(6.0, 13.0)
+		_:
+			_environment_detail_timer = _rng.randf_range(8.0, 15.0)
 
 
-func _create_player(player_name: String, initial_volume: float) -> AudioStreamPlayer:
+func _build_audio_buses() -> void:
+	_ensure_bus("Music", "Master")
+	_ensure_bus("Ambience", "Master")
+	_ensure_bus("SFX", "Master")
+	_ensure_bus("Dialogue", "Master")
+	_ensure_bus("UI", "Master")
+
+	var ambience_index: int = AudioServer.get_bus_index("Ambience")
+	if ambience_index >= 0 and AudioServer.get_bus_effect_count(ambience_index) == 0:
+		var reverb: AudioEffectReverb = AudioEffectReverb.new()
+		reverb.room_size = 0.74
+		reverb.damping = 0.58
+		reverb.spread = 0.86
+		reverb.hipass = 0.12
+		reverb.dry = 0.78
+		reverb.wet = 0.24
+		AudioServer.add_bus_effect(ambience_index, reverb)
+
+	var dialogue_index: int = AudioServer.get_bus_index("Dialogue")
+	if dialogue_index >= 0 and AudioServer.get_bus_effect_count(dialogue_index) == 0:
+		var dialogue_reverb: AudioEffectReverb = AudioEffectReverb.new()
+		dialogue_reverb.room_size = 0.38
+		dialogue_reverb.damping = 0.72
+		dialogue_reverb.spread = 0.62
+		dialogue_reverb.dry = 0.90
+		dialogue_reverb.wet = 0.10
+		AudioServer.add_bus_effect(dialogue_index, dialogue_reverb)
+
+
+func _ensure_bus(bus_name: String, send_name: String) -> void:
+	if AudioServer.get_bus_index(bus_name) >= 0:
+		return
+	AudioServer.add_bus()
+	var bus_index: int = AudioServer.get_bus_count() - 1
+	AudioServer.set_bus_name(bus_index, bus_name)
+	AudioServer.set_bus_send(bus_index, send_name)
+
+
+func _resolved_ambience_volume() -> float:
+	match _current_environment:
+		&"cemetery":
+			return 0.20
+		&"pontiac":
+			return 0.18
+		&"void":
+			return 0.15
+		&"club":
+			return 0.105
+		&"chamber":
+			return 0.10
+		_:
+			return 0.0
+
+
+func _resolved_detail_volume() -> float:
+	match _current_environment:
+		&"cemetery":
+			return 0.10
+		&"void":
+			return 0.060
+		&"club":
+			return 0.055
+		&"chamber":
+			return 0.045
+		_:
+			return 0.0
+
+
+func _create_player(player_name: String, initial_volume: float, bus_name: String) -> AudioStreamPlayer:
 	var player: AudioStreamPlayer = AudioStreamPlayer.new()
 	player.name = player_name
 	player.volume_linear = initial_volume
+	player.bus = bus_name
 	add_child(player)
 	return player
 
@@ -198,9 +403,12 @@ func _fade_out_player(player: AudioStreamPlayer, fade_seconds: float) -> void:
 	tween.tween_callback(Callable(player, "stop"))
 
 
-func _play_one_shot(stream: AudioStreamWAV, volume: float, pitch: float) -> void:
+func _play_one_shot(stream: AudioStream, volume: float, pitch: float, bus_name: String = "SFX") -> void:
+	if stream == null:
+		return
 	var player: AudioStreamPlayer = _next_one_shot_player()
 	player.stream = stream
+	player.bus = bus_name
 	player.volume_linear = volume
 	player.pitch_scale = pitch
 	player.play()
