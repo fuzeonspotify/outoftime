@@ -5,7 +5,7 @@
 [ext_resource type="Script" path="res://scripts/ui/scene_ui_polish.gd" id="6_ui"]
 [ext_resource type="Script" path="res://scripts/world/interaction_release_polish.gd" id="7_interactions"]
 [ext_resource type="Script" path="res://scripts/audio/nightclub_spatial_audio.gd" id="8_audio"]
-[ext_resource type="Script" path="res://scripts/models/realistic_environment_replacements.gd" id="9_exact_environment"]
+[ext_resource type="Script" path="res://scripts/models/realistic_environment_replacements_release.gd" id="9_exact_environment"]
 
 [node name="RuinedNightclub" type="Node3D"]
 script = ExtResource("1_club")
