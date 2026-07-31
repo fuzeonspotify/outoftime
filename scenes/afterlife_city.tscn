@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://scripts/world/heaven_descent.gd" id="1_heaven"]
+[ext_resource type="Script" path="res://scripts/world/heaven_gate_finale.gd" id="1_heaven"]
 
 [node name="HeavenDescent" type="Node3D"]
 script = ExtResource("1_heaven")
