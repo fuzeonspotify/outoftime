@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/cemetery.gd" id="1_cemetery"]
 [ext_resource type="Script" path="res://scripts/world/runtime_fixes.gd" id="2_fixes"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scripts/world/cemetery_woman_model.gd" id="6_woman"]
 [ext_resource type="Script" path="res://scripts/models/world_model_upgrade.gd" id="7_models"]
 [ext_resource type="Script" path="res://scripts/models/model_alignment_fixes.gd" id="8_alignment"]
+[ext_resource type="Script" path="res://scripts/world/kenney_level_expansion.gd" id="9_kenney"]
 
 [node name="Cemetery" type="Node3D"]
 script = ExtResource("1_cemetery")
@@ -32,3 +33,6 @@ script = ExtResource("7_models")
 
 [node name="ModelAlignmentFixes" type="Node" parent="."]
 script = ExtResource("8_alignment")
+
+[node name="KenneyLevelExpansion" type="Node" parent="."]
+script = ExtResource("9_kenney")
