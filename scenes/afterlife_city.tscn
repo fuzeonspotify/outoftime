@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" path="res://scripts/world/afterlife_void.gd" id="1_void"]
 [ext_resource type="Script" path="res://scripts/world/nightclub_transition.gd" id="2_transition"]
-[ext_resource type="Script" path="res://scripts/world/void_glb_expansion.gd" id="3_glb"]
+[ext_resource type="Script" path="res://scripts/world/void_glb_expansion_v2.gd" id="3_glb"]
 
 [node name="AfterlifeVoid" type="Node3D"]
 script = ExtResource("1_void")
