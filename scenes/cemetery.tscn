@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/cemetery.gd" id="1_cemetery"]
 [ext_resource type="Script" path="res://scripts/world/runtime_fixes.gd" id="2_fixes"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/world/cemetery_audio.gd" id="4_audio"]
 [ext_resource type="Script" path="res://scripts/world/environment_art_pass.gd" id="5_art"]
 [ext_resource type="Script" path="res://scripts/world/cemetery_woman_model.gd" id="6_woman"]
+[ext_resource type="Script" path="res://scripts/models/world_model_upgrade.gd" id="7_models"]
 
 [node name="Cemetery" type="Node3D"]
 script = ExtResource("1_cemetery")
@@ -24,3 +25,6 @@ script = ExtResource("5_art")
 
 [node name="CemeteryWomanModel" type="Node" parent="."]
 script = ExtResource("6_woman")
+
+[node name="WorldModelUpgrade" type="Node" parent="."]
+script = ExtResource("7_models")
