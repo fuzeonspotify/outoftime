@@ -4,7 +4,7 @@ const CACHE_ROOT: String = "user://out_of_time_character_models_v1"
 const SKULL_PATH: String = CACHE_ROOT + "/realistic_skull.glb"
 const GHOST_WOMAN_PATH: String = CACHE_ROOT + "/ghost_woman_corset.glb"
 
-const SKULL_URL: String = "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Skull/glTF-Binary/Skull.glb"
+const SKULL_URL: String = "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/ScatteringSkull/glTF-Binary/ScatteringSkull.glb"
 const GHOST_WOMAN_URL: String = "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Corset/glTF-Binary/Corset.glb"
 
 var _skeleton_head_prototype: Node3D
@@ -32,7 +32,6 @@ func _prepare_model(remote_url: String, local_path: String, is_skull: bool) -> b
 		var downloaded: bool = await _download_file(remote_url, local_path)
 		if not downloaded:
 			return false
-
 	var prototype: Node3D = _load_glb(local_path)
 	if prototype == null:
 		DirAccess.remove_absolute(ProjectSettings.globalize_path(local_path))
@@ -72,12 +71,7 @@ func _download_file(remote_url: String, local_path: String) -> bool:
 func _load_glb(model_path: String) -> Node3D:
 	var document: GLTFDocument = GLTFDocument.new()
 	var state: GLTFState = GLTFState.new()
-	var import_error: Error = document.append_from_file(
-		model_path,
-		state,
-		0,
-		model_path.get_base_dir()
-	)
+	var import_error: Error = document.append_from_file(model_path, state, 0, model_path.get_base_dir())
 	if import_error != OK:
 		return null
 	var generated_scene: Node = document.generate_scene(state)
