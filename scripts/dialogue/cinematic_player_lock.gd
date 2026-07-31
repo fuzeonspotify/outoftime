@@ -2,6 +2,7 @@ extends Node
 
 var _player: Node
 var _hud: CanvasLayer
+var _memory_overlay: CanvasLayer
 var _was_processing: bool = true
 var _was_physics_processing: bool = true
 var _was_input_processing: bool = true
@@ -34,8 +35,11 @@ func _on_conversation_started(_conversation_id: String) -> void:
 		character.velocity = Vector3.ZERO
 
 	_hud = _player.get_node_or_null("PlayerHUD") as CanvasLayer
+	_memory_overlay = _player.get_node_or_null("MemorySignalOverlay") as CanvasLayer
 	if _hud != null:
 		_hud.visible = false
+	if _memory_overlay != null:
+		_memory_overlay.visible = false
 
 
 func _on_conversation_finished(_conversation_id: String, _outcome: String) -> void:
@@ -49,12 +53,15 @@ func _on_conversation_finished(_conversation_id: String, _outcome: String) -> vo
 	_player.set_process_unhandled_input(_was_unhandled_input_processing)
 	if _hud != null and is_instance_valid(_hud):
 		_hud.visible = true
+	if _memory_overlay != null and is_instance_valid(_memory_overlay):
+		_memory_overlay.visible = true
 	_reset_state()
 
 
 func _reset_state() -> void:
 	_player = null
 	_hud = null
+	_memory_overlay = null
 	_was_processing = true
 	_was_physics_processing = true
 	_was_input_processing = true
