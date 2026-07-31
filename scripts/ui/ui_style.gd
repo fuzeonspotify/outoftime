@@ -2,12 +2,13 @@ class_name UIStyle
 extends RefCounted
 
 const COLOR_VOID: Color = Color("05040c")
-const COLOR_PANEL: Color = Color(0.035, 0.027, 0.065, 0.94)
-const COLOR_PANEL_SOFT: Color = Color(0.045, 0.040, 0.080, 0.86)
-const COLOR_BORDER: Color = Color(0.39, 0.31, 0.58, 0.78)
-const COLOR_BORDER_SOFT: Color = Color(0.26, 0.23, 0.38, 0.66)
+const COLOR_PANEL: Color = Color(0.028, 0.020, 0.052, 0.95)
+const COLOR_PANEL_SOFT: Color = Color(0.040, 0.032, 0.071, 0.88)
+const COLOR_BORDER: Color = Color(0.44, 0.34, 0.66, 0.82)
+const COLOR_BORDER_SOFT: Color = Color(0.27, 0.23, 0.40, 0.70)
 const COLOR_ACCENT: Color = Color("d84b9e")
 const COLOR_ACCENT_COOL: Color = Color("7f8cff")
+const COLOR_SIGNAL: Color = Color("9b67d9")
 const COLOR_TEXT: Color = Color("f3edf7")
 const COLOR_TEXT_MUTED: Color = Color("aaa4b9")
 const COLOR_TEXT_DIM: Color = Color("747083")
@@ -23,18 +24,33 @@ static func make_panel_style(
 	var style: StyleBoxFlat = StyleBoxFlat.new()
 	style.bg_color = background
 	style.border_color = border
-	style.border_width_left = border_width
+	style.border_width_left = maxi(border_width, 1)
 	style.border_width_top = border_width
 	style.border_width_right = border_width
 	style.border_width_bottom = border_width
 	style.corner_radius_top_left = radius
-	style.corner_radius_top_right = radius
-	style.corner_radius_bottom_left = radius
+	style.corner_radius_top_right = maxi(2, radius / 3)
+	style.corner_radius_bottom_left = maxi(2, radius / 3)
 	style.corner_radius_bottom_right = radius
 	style.content_margin_left = padding
 	style.content_margin_top = padding
 	style.content_margin_right = padding
 	style.content_margin_bottom = padding
+	return style
+
+
+static func make_signal_panel_style(
+	background: Color = COLOR_PANEL,
+	border: Color = COLOR_ACCENT,
+	padding: float = 18.0
+) -> StyleBoxFlat:
+	var style: StyleBoxFlat = make_panel_style(background, border, 16, 1, padding)
+	style.border_width_left = 4
+	style.border_width_bottom = 2
+	style.corner_radius_top_left = 2
+	style.corner_radius_top_right = 18
+	style.corner_radius_bottom_left = 18
+	style.corner_radius_bottom_right = 2
 	return style
 
 
@@ -51,22 +67,22 @@ static func apply_button(button: Button, primary: bool = false) -> void:
 	if button == null:
 		return
 
-	var normal_background: Color = Color(0.075, 0.058, 0.105, 0.96)
+	var normal_background: Color = Color(0.064, 0.048, 0.096, 0.97)
 	var normal_border: Color = COLOR_BORDER_SOFT
-	var hover_background: Color = Color(0.13, 0.080, 0.16, 0.98)
+	var hover_background: Color = Color(0.13, 0.072, 0.16, 0.99)
 	var hover_border: Color = COLOR_ACCENT if primary else COLOR_ACCENT_COOL
-	var pressed_background: Color = Color(0.18, 0.075, 0.15, 1.0)
+	var pressed_background: Color = Color(0.19, 0.062, 0.15, 1.0)
 
 	if primary:
-		normal_background = Color(0.34, 0.075, 0.24, 0.98)
-		normal_border = Color(0.90, 0.34, 0.65, 0.92)
-		hover_background = Color(0.48, 0.09, 0.32, 1.0)
+		normal_background = Color(0.31, 0.055, 0.22, 0.99)
+		normal_border = Color(0.90, 0.34, 0.65, 0.94)
+		hover_background = Color(0.47, 0.075, 0.31, 1.0)
 
-	button.add_theme_stylebox_override("normal", make_panel_style(normal_background, normal_border, 9, 1, 12.0))
-	button.add_theme_stylebox_override("hover", make_panel_style(hover_background, hover_border, 9, 2, 12.0))
-	button.add_theme_stylebox_override("pressed", make_panel_style(pressed_background, COLOR_ACCENT, 9, 2, 12.0))
-	button.add_theme_stylebox_override("focus", make_panel_style(Color(0.0, 0.0, 0.0, 0.0), COLOR_ACCENT_COOL, 9, 2, 12.0))
-	button.add_theme_stylebox_override("disabled", make_panel_style(Color(0.04, 0.04, 0.05, 0.72), Color(0.16, 0.16, 0.20, 0.65), 9, 1, 12.0))
+	button.add_theme_stylebox_override("normal", make_signal_panel_style(normal_background, normal_border, 10.0))
+	button.add_theme_stylebox_override("hover", make_signal_panel_style(hover_background, hover_border, 10.0))
+	button.add_theme_stylebox_override("pressed", make_signal_panel_style(pressed_background, COLOR_ACCENT, 10.0))
+	button.add_theme_stylebox_override("focus", make_signal_panel_style(Color(0.055, 0.042, 0.086, 0.98), COLOR_ACCENT_COOL, 10.0))
+	button.add_theme_stylebox_override("disabled", make_signal_panel_style(Color(0.035, 0.035, 0.045, 0.74), Color(0.15, 0.15, 0.19, 0.66), 10.0))
 	button.add_theme_color_override("font_color", COLOR_TEXT)
 	button.add_theme_color_override("font_hover_color", Color.WHITE)
 	button.add_theme_color_override("font_pressed_color", Color.WHITE)
@@ -76,6 +92,21 @@ static func apply_button(button: Button, primary: bool = false) -> void:
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button.focus_mode = Control.FOCUS_ALL
 	button.set_meta("release_styled", true)
+	_bind_button_audio(button)
+
+
+static func _bind_button_audio(button: Button) -> void:
+	if button.has_meta("audio_feedback_bound"):
+		return
+	button.set_meta("audio_feedback_bound", true)
+	var hover_callable: Callable = Callable(SFXDirector, "play_ui_hover")
+	var confirm_callable: Callable = Callable(SFXDirector, "play_ui_confirm")
+	if not button.mouse_entered.is_connected(hover_callable):
+		button.mouse_entered.connect(hover_callable)
+	if not button.focus_entered.is_connected(hover_callable):
+		button.focus_entered.connect(hover_callable)
+	if not button.pressed.is_connected(confirm_callable):
+		button.pressed.connect(confirm_callable)
 
 
 static func apply_label(
@@ -113,11 +144,11 @@ static func apply_progress(progress: ProgressBar) -> void:
 	progress.show_percentage = false
 	progress.add_theme_stylebox_override(
 		"background",
-		make_panel_style(Color(0.018, 0.016, 0.030, 0.92), COLOR_BORDER_SOFT, 4, 1, 0.0)
+		make_panel_style(Color(0.014, 0.012, 0.026, 0.94), COLOR_BORDER_SOFT, 3, 1, 0.0)
 	)
 	progress.add_theme_stylebox_override(
 		"fill",
-		make_panel_style(Color("a83d86"), Color("ec78bd"), 4, 0, 0.0)
+		make_panel_style(Color("a83d86"), Color("ec78bd"), 3, 0, 0.0)
 	)
 	progress.set_meta("release_styled", true)
 
