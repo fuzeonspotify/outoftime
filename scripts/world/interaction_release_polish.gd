@@ -29,6 +29,7 @@ func _configure_interaction(area: Area3D) -> void:
 	var marker_height: float = 2.35
 	var marker_color: Color = Color("bb62d9")
 	var replacement_message: String = ""
+	var suppress_message: bool = false
 
 	if interaction_name == "MemorialInteraction":
 		title = "THE MEMORIAL"
@@ -44,7 +45,7 @@ func _configure_interaction(area: Area3D) -> void:
 		hold_duration = 0.55
 		marker_height = 3.0
 		marker_color = Color("9d8de0")
-		replacement_message = "\"You're late,\" she whispers. After a pause, she smiles as though she has watched you fail here before. \"Maybe this time will be different.\""
+		suppress_message = true
 	elif interaction_name.begins_with("AnchorInteraction_"):
 		title = "GRAVITY ANCHOR"
 		context = "STABILIZE"
@@ -82,6 +83,7 @@ func _configure_interaction(area: Area3D) -> void:
 		hold_duration = 0.72
 		marker_height = 3.0
 		marker_color = Color("bc6fa4")
+		suppress_message = true
 	elif interaction_name == "NightclubEntrance":
 		title = "THE THRESHOLD"
 		context = "CROSS OVER"
@@ -99,6 +101,7 @@ func _configure_interaction(area: Area3D) -> void:
 	area.set("hold_duration", hold_duration)
 	area.set("marker_height", marker_height)
 	area.set("marker_color", marker_color)
+	area.set("suppress_message", suppress_message)
 	if not replacement_message.is_empty():
 		area.set("interaction_message", replacement_message)
 	if area.has_method("refresh_release_presentation"):
