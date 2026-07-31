@@ -2,7 +2,7 @@
   "okay_intro": {
     "title": "Okay",
     "path": "res://assets/audio/local/okay.ogg",
-    "story_use": "Main menu and skeleton awakening; filtered or instrumental version",
+    "story_use": "Reserved for a later upbeat scene where the skeleton performs being okay; intentionally suppressed in the cemetery opening",
     "target_length_seconds": 60
   },
   "pontiac_memory": {
