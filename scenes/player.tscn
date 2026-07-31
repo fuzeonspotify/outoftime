@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/player/third_person_camera_input.gd" id="1_player"]
 [ext_resource type="Script" path="res://scripts/models/player_skeleton_model.gd" id="2_model"]
 [ext_resource type="Script" path="res://scripts/models/model_runtime_alignment.gd" id="3_alignment"]
 [ext_resource type="Script" path="res://scripts/ui/memory_hud_effects.gd" id="4_memory_ui"]
+[ext_resource type="Script" path="res://scripts/models/realistic_player_head.gd" id="5_realistic_head"]
 
 [node name="SkeletonPlayer" type="CharacterBody3D"]
 script = ExtResource("1_player")
@@ -16,3 +17,6 @@ script = ExtResource("3_alignment")
 
 [node name="MemoryHUDEffects" type="Node" parent="."]
 script = ExtResource("4_memory_ui")
+
+[node name="RealisticPlayerHead" type="Node" parent="."]
+script = ExtResource("5_realistic_head")
