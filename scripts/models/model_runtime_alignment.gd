@@ -6,24 +6,23 @@ func _ready() -> void:
 
 
 func _apply_alignment() -> void:
-	await get_tree().process_frame
-	await get_tree().process_frame
-	await get_tree().process_frame
-	await get_tree().process_frame
+	# The rig installers intentionally defer several frames after the scene opens.
+	for _frame_index: int in range(10):
+		await get_tree().process_frame
 	var scene_root: Node3D = get_parent() as Node3D
 	if scene_root == null:
 		return
 
 	match str(scene_root.name):
 		"SkeletonPlayer":
-			_align_player_model(scene_root)
+			_verify_player_model(scene_root)
 		"RoadMemory":
 			_verify_exact_porsche(scene_root)
 		"Cemetery":
 			_hide_replaced_tree_geometry(scene_root)
 
 
-func _align_player_model(player_root: Node3D) -> void:
+func _verify_player_model(player_root: Node3D) -> void:
 	var visual_root: Node3D = player_root.get_node_or_null("SkeletonVisual") as Node3D
 	if visual_root == null:
 		return
@@ -33,11 +32,11 @@ func _align_player_model(player_root: Node3D) -> void:
 
 
 func _verify_exact_porsche(road_root: Node3D) -> void:
-	var pontiac: Node3D = road_root.get_node_or_null("SpectralPontiac") as Node3D
-	if pontiac == null:
+	var vehicle_root: Node3D = road_root.get_node_or_null("SpectralPontiac") as Node3D
+	if vehicle_root == null:
 		push_error("REQUIRED MODEL ERROR: the bridge vehicle root was not created.")
 		return
-	var porsche: Node3D = pontiac.get_node_or_null("Porsche911Turbo") as Node3D
+	var porsche: Node3D = vehicle_root.get_node_or_null("Porsche911Turbo") as Node3D
 	if porsche == null:
 		push_error("REQUIRED MODEL ERROR: Porsche911Turbo is missing. No backup vehicle is allowed.")
 
