@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/ruined_nightclub.gd" id="1_club"]
 [ext_resource type="Script" path="res://scripts/world/nightclub_balcony_access.gd" id="2_balcony"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scripts/world/kenney_level_expansion.gd" id="5_kenney"]
 [ext_resource type="Script" path="res://scripts/ui/scene_ui_polish.gd" id="6_ui"]
 [ext_resource type="Script" path="res://scripts/world/interaction_release_polish.gd" id="7_interactions"]
+[ext_resource type="Script" path="res://scripts/audio/nightclub_spatial_audio.gd" id="8_audio"]
 
 [node name="RuinedNightclub" type="Node3D"]
 script = ExtResource("1_club")
@@ -28,3 +29,6 @@ script = ExtResource("6_ui")
 
 [node name="InteractionReleasePolish" type="Node" parent="."]
 script = ExtResource("7_interactions")
+
+[node name="NightclubSpatialAudio" type="Node" parent="."]
+script = ExtResource("8_audio")
