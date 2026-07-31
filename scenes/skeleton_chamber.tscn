@@ -6,7 +6,7 @@
 [ext_resource type="Script" path="res://scripts/ui/scene_ui_polish.gd" id="4_ui"]
 [ext_resource type="Script" path="res://scripts/world/interaction_release_polish.gd" id="5_interactions"]
 [ext_resource type="Script" path="res://scripts/dialogue/chamber_dialogue_integration.gd" id="6_dialogue"]
-[ext_resource type="Script" path="res://scripts/models/realistic_ghost_woman.gd" id="7_realistic_woman"]
+[ext_resource type="Script" path="res://scripts/models/rigged_ghost_woman.gd" id="7_rigged_woman"]
 
 [node name="SkeletonChamber" type="Node3D"]
 script = ExtResource("1_chamber")
@@ -26,5 +26,5 @@ script = ExtResource("5_interactions")
 [node name="ChamberDialogueIntegration" type="Node" parent="."]
 script = ExtResource("6_dialogue")
 
-[node name="RealisticGhostWoman" type="Node" parent="."]
-script = ExtResource("7_realistic_woman")
+[node name="RiggedGhostWoman" type="Node" parent="."]
+script = ExtResource("7_rigged_woman")
