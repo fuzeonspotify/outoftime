@@ -1,5 +1,6 @@
 extends "res://scripts/world/heaven_gate_finale.gd"
 
+const CINEMATIC_ANGEL_SCRIPT: Script = preload("res://scripts/world/heaven_angel_cinematic.gd")
 const FIRST_GATE_HOLD_SECONDS: float = 2.8
 const ATTACK_TRIGGER_PROGRESS: float = 0.50
 const ANGEL_APPROACH_SECONDS: float = 3.10
@@ -16,6 +17,24 @@ func _ready() -> void:
 	_gate_interaction.call("refresh_release_presentation")
 	if _gate_interaction.has_signal("hold_progressed"):
 		_gate_interaction.connect("hold_progressed", Callable(self, "_on_gate_hold_progressed"))
+
+
+func _build_angel_procession() -> void:
+	var z_positions: Array[float] = [
+		30.0, 18.0, 5.0, -8.0, -21.0, -34.0, -47.0,
+		-60.0, -73.0, -86.0, -99.0, -112.0, -126.0
+	]
+	for index: int in range(z_positions.size()):
+		for side: float in [-1.0, 1.0]:
+			var angel: Node3D = CINEMATIC_ANGEL_SCRIPT.new() as Node3D
+			angel.name = "Angel_%02d_%s" % [index, "L" if side < 0.0 else "R"]
+			add_child(angel)
+			angel.call(
+				"configure",
+				Vector3(side * (6.7 + float(index % 3) * 0.75), 0.0, z_positions[index]),
+				float(index) * 0.53 + side
+			)
+			_angels.append(angel)
 
 
 func _on_gate_hold_progressed(player: Node, progress: float) -> void:
@@ -115,9 +134,9 @@ func _start_gate_encounter(player: Node) -> void:
 		74.0,
 		CAMERA_TO_EYES_SECONDS
 	).set_trans(Tween.TRANS_SINE)
-	await get_tree().create_timer(CAMERA_TO_EYES_SECONDS * 0.74).timeout
+	await get_tree().create_timer(CAMERA_TO_EYES_SECONDS).timeout
 	_store_and_hide_player_presentation(true)
-	await get_tree().create_timer(ANGEL_APPROACH_SECONDS - CAMERA_TO_EYES_SECONDS * 0.74).timeout
+	await get_tree().create_timer(ANGEL_APPROACH_SECONDS - CAMERA_TO_EYES_SECONDS).timeout
 
 	_scare_title.text = "SHE WAS WAITING FOR YOU TO OPEN IT"
 	_scare_instruction.text = "DO NOT LOOK AWAY"
