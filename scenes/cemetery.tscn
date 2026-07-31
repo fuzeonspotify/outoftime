@@ -7,7 +7,7 @@
 [ext_resource type="Script" path="res://scripts/world/interaction_release_polish.gd" id="11_interactions"]
 [ext_resource type="Script" path="res://scripts/dialogue/cemetery_dialogue_integration.gd" id="12_dialogue"]
 [ext_resource type="Script" path="res://scripts/models/rigged_ghost_woman.gd" id="13_rigged_woman"]
-[ext_resource type="Script" path="res://scripts/models/realistic_environment_replacements.gd" id="14_exact_environment"]
+[ext_resource type="Script" path="res://scripts/models/realistic_environment_replacements_release.gd" id="14_exact_environment"]
 
 [node name="Cemetery" type="Node3D"]
 script = ExtResource("1_cemetery")
