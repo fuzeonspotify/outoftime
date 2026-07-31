@@ -152,7 +152,7 @@ func _update_embedded_animation(force: bool = false) -> void:
 	if _animation_player == null:
 		return
 	var planar_speed: float = Vector2(_player.velocity.x, _player.velocity.z).length()
-	var target_keywords: Array[String]
+	var target_keywords: Array[String] = ["idle", "standing"]
 	var playback_speed: float = 1.0
 	if not _player.is_on_floor():
 		target_keywords = ["jump", "fall", "air"]
@@ -163,9 +163,6 @@ func _update_embedded_animation(force: bool = false) -> void:
 	elif planar_speed > 0.20:
 		target_keywords = ["walk", "move"]
 		playback_speed = clampf(planar_speed / 4.5, 0.72, 1.25)
-	else:
-		target_keywords = ["idle", "standing"]
-		playback_speed = 1.0
 
 	var target_animation: StringName = _find_animation(target_keywords)
 	if target_animation == &"":
@@ -179,7 +176,7 @@ func _update_embedded_animation(force: bool = false) -> void:
 	var animation: Animation = _animation_player.get_animation(target_animation)
 	if animation != null:
 		animation.loop_mode = Animation.LOOP_LINEAR
-	_animation_player.play(target_animation, 0.18, playback_speed)
+	_animation_player.play(target_animation, 0.18, 1.0)
 
 
 func _find_animation(keywords: Array[String]) -> StringName:
