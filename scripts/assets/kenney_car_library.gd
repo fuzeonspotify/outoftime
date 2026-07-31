@@ -157,7 +157,8 @@ func _scan_directory(directory_path: String, results: Array[String]) -> void:
 
 
 func _select_and_load_model(model_paths: Array[String]) -> bool:
-	var remaining_paths: Array[String] = model_paths.duplicate()
+	var remaining_paths: Array[String] = []
+	remaining_paths.append_array(model_paths)
 	while not remaining_paths.is_empty():
 		var best_index: int = 0
 		var best_score: int = _score_model_path(remaining_paths[0])
@@ -212,7 +213,10 @@ func _load_model_prototype(model_path: String) -> Node3D:
 	if import_error != OK:
 		return null
 	var generated_scene: Node = document.generate_scene(state)
-	return generated_scene as Node3D
+	var generated_root: Node3D = generated_scene as Node3D
+	if generated_root == null and generated_scene != null:
+		generated_scene.free()
+	return generated_root
 
 
 func _write_ready_marker() -> void:
