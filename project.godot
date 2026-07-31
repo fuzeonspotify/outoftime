@@ -17,6 +17,7 @@ config/features=PackedStringArray("4.7")
 [autoload]
 
 OnlineAudioLibrary="*res://scripts/audio/online_audio_library.gd"
+StartupPreloader="*res://scripts/bootstrap/startup_preloader.gd"
 MusicDirector="*res://scripts/audio/music_director.gd"
 SFXDirector="*res://scripts/audio/sfx_director.gd"
 DialogueDirector="*res://scripts/dialogue/dialogue_director.gd"
