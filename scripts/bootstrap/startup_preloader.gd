@@ -3,7 +3,7 @@ extends Node
 signal progress_changed(progress: float, status: String)
 signal preload_completed(used_fallbacks: bool)
 
-const LEVEL_LOADER_SCRIPT: Script = preload("res://scripts/world/kenney_level_expansion.gd")
+const ENVIRONMENT_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/polyhaven_environment_library.gd")
 const CAR_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/custom_porsche_car_library.gd")
 const CHARACTER_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/realistic_character_library.gd")
 
@@ -15,16 +15,7 @@ const SCENE_PATHS: Array[String] = [
 	"res://scenes/skeleton_chamber.tscn"
 ]
 
-const LEVEL_FILES: Dictionary = {
-	"platformer": [
-		"brick.glb", "cloud.glb", "flag.glb", "grass-small.glb", "grass.glb",
-		"platform-grass-large-round.glb", "platform-large.glb", "platform-medium.glb",
-		"platform.glb"
-	],
-	"fps": ["wall-high.glb", "wall-low.glb", "platform-large-grass.glb"]
-}
-
-var _level_helper: Node
+var _environment_library: Node
 var _car_library: Node
 var _character_library: Node
 var _scene_cache: Dictionary = {}
@@ -32,15 +23,14 @@ var _progress: float = 0.0
 var _status: String = "STARTING MEMORY ARCHIVE"
 var _ready_for_gameplay: bool = false
 var _preparing: bool = false
-var _used_fallbacks: bool = false
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_level_helper = LEVEL_LOADER_SCRIPT.new() as Node
+	_environment_library = ENVIRONMENT_LIBRARY_SCRIPT.new() as Node
 	_car_library = CAR_LIBRARY_SCRIPT.new() as Node
 	_character_library = CHARACTER_LIBRARY_SCRIPT.new() as Node
-	add_child(_level_helper)
+	add_child(_environment_library)
 	add_child(_car_library)
 	add_child(_character_library)
 	_prepare_all.call_deferred()
@@ -59,21 +49,28 @@ func get_status() -> String:
 
 
 func used_fallbacks() -> bool:
-	return _used_fallbacks
+	return false
 
 
 func get_preloaded_scene(scene_path: String) -> PackedScene:
 	return _scene_cache.get(scene_path) as PackedScene
 
 
-func get_level_prototype(source_id: String, file_name: String) -> Node3D:
-	if _level_helper == null:
+func get_environment_prototype(asset_id: String) -> Node3D:
+	if _environment_library == null:
 		return null
-	var cache_variant: Variant = _level_helper.get("_prototype_cache")
-	if not (cache_variant is Dictionary):
+	return _environment_library.call("get_model_prototype", asset_id) as Node3D
+
+
+func get_environment_material(material_id: String) -> StandardMaterial3D:
+	if _environment_library == null:
 		return null
-	var cache: Dictionary = cache_variant
-	return cache.get("%s/%s" % [source_id, file_name]) as Node3D
+	return _environment_library.call("get_surface_material", material_id) as StandardMaterial3D
+
+
+func get_level_prototype(_source_id: String, file_name: String) -> Node3D:
+	# Compatibility only. Active scenes use exact Poly Haven IDs directly.
+	return get_environment_prototype(file_name.get_basename())
 
 
 func get_car_prototype() -> Node3D:
@@ -84,7 +81,7 @@ func get_car_prototype() -> Node3D:
 
 func get_car_model_name() -> String:
 	if _car_library == null:
-		return "procedural fallback"
+		return "required Porsche unavailable"
 	return str(_car_library.call("get_selected_model_name"))
 
 
@@ -95,7 +92,6 @@ func get_player_character_prototype() -> Node3D:
 
 
 func get_skeleton_head_prototype() -> Node3D:
-	# Compatibility for stale scenes from the retired head-only pass.
 	return get_player_character_prototype()
 
 
@@ -106,7 +102,6 @@ func get_ghost_woman_prototype() -> Node3D:
 
 
 func get_void_prototype(_model_path: String) -> Node3D:
-	# Compatibility for retired cached scenes. The active chapter is Heaven.
 	return null
 
 
@@ -118,29 +113,28 @@ func _prepare_all() -> void:
 	if _preparing or _ready_for_gameplay:
 		return
 	_preparing = true
-	_update_progress(0.02, "OPENING MEMORY ARCHIVE")
+	_update_progress(0.02, "OPENING EXACT ASSET ARCHIVE")
 	await get_tree().process_frame
 
 	var scenes_ready: bool = await _prepare_scene_resources()
-	var audio_ready: bool = await _prepare_audio()
+	await _prepare_audio()
 	var character_ready: bool = await _prepare_character_assets()
 	var car_ready: bool = await _prepare_car_asset()
-	var level_ready: bool = await _prepare_level_assets()
-	_used_fallbacks = (
-		not scenes_ready
-		or not audio_ready
-		or not character_ready
-		or not car_ready
-		or not level_ready
-	)
+	var environment_ready: bool = await _prepare_environment_assets()
 
-	_ready_for_gameplay = true
+	_ready_for_gameplay = scenes_ready and character_ready and car_ready and environment_ready
 	_preparing = false
-	var final_status: String = "MEMORY ARCHIVE READY"
-	if _used_fallbacks:
-		final_status = "MEMORY ARCHIVE READY  //  PROCEDURAL FALLBACKS ACTIVE"
-	_update_progress(1.0, final_status)
-	preload_completed.emit(_used_fallbacks)
+	if _ready_for_gameplay:
+		_update_progress(1.0, "EXACT HIGH-QUALITY ASSETS READY")
+	else:
+		var failure_detail: String = ""
+		if _environment_library != null and _environment_library.has_method("get_last_error"):
+			failure_detail = str(_environment_library.call("get_last_error"))
+		var final_status: String = "REQUIRED ASSET FAILED  //  NO FALLBACK LOADED"
+		if not failure_detail.is_empty():
+			final_status += "  //  " + failure_detail.to_upper()
+		_update_progress(1.0, final_status)
+	preload_completed.emit(false)
 
 
 func _prepare_scene_resources() -> bool:
@@ -148,7 +142,7 @@ func _prepare_scene_resources() -> bool:
 	for scene_index: int in range(SCENE_PATHS.size()):
 		var scene_path: String = SCENE_PATHS[scene_index]
 		_update_progress(
-			lerpf(0.04, 0.15, float(scene_index + 1) / float(SCENE_PATHS.size())),
+			lerpf(0.04, 0.13, float(scene_index + 1) / float(SCENE_PATHS.size())),
 			"WARMING CHAPTER  %d / %d" % [scene_index + 1, SCENE_PATHS.size()]
 		)
 		var packed_scene: PackedScene = load(scene_path) as PackedScene
@@ -161,7 +155,7 @@ func _prepare_scene_resources() -> bool:
 
 
 func _prepare_audio() -> bool:
-	_update_progress(0.18, "PREPARING HEADPHONE AUDIO")
+	_update_progress(0.15, "PREPARING HEADPHONE AUDIO")
 	if not OnlineAudioLibrary.has_method("prepare_library"):
 		return false
 	OnlineAudioLibrary.call("prepare_library")
@@ -171,61 +165,45 @@ func _prepare_audio() -> bool:
 
 
 func _prepare_character_assets() -> bool:
-	_update_progress(0.32, "PREPARING COMPLETE CHARACTER RIGS")
+	_update_progress(0.24, "PREPARING REQUIRED CHARACTER RIGS")
 	if _character_library == null or not _character_library.has_method("prepare"):
 		return false
 	var prepared_variant: Variant = await _character_library.call("prepare")
 	var prepared: bool = bool(prepared_variant)
 	_update_progress(
-		0.43,
-		"COMPLETE CHARACTER RIGS READY" if prepared else "CHARACTER FALLBACKS READY"
+		0.34,
+		"REQUIRED CHARACTER RIGS READY" if prepared else "REQUIRED CHARACTER RIG FAILED"
 	)
 	await get_tree().process_frame
 	return prepared
 
 
 func _prepare_car_asset() -> bool:
-	_update_progress(0.46, "PREPARING REALISTIC BRIDGE VEHICLE")
+	_update_progress(0.36, "PREPARING REQUIRED PORSCHE")
 	if _car_library == null or not _car_library.has_method("prepare"):
 		return false
 	var prepared_variant: Variant = await _car_library.call("prepare")
 	var prepared: bool = bool(prepared_variant)
 	_update_progress(
-		0.58,
-		"BRIDGE VEHICLE READY" if prepared else "BRIDGE VEHICLE FALLBACK READY"
+		0.43,
+		"REQUIRED PORSCHE READY" if prepared else "REQUIRED PORSCHE FAILED"
 	)
 	await get_tree().process_frame
 	return prepared
 
 
-func _prepare_level_assets() -> bool:
-	_update_progress(0.61, "PREPARING CEMETERY AND NIGHTCLUB MODELS")
-	_level_helper.call("_ensure_cache_directories")
-	var all_cached: bool = bool(_level_helper.call("_all_assets_cached"))
-	if not all_cached:
-		var downloaded_variant: Variant = await _level_helper.call("_download_missing_assets")
-		if not bool(downloaded_variant):
-			return false
-
-	var files_loaded: int = 0
-	var total_files: int = 12
-	for source_id_variant: Variant in LEVEL_FILES.keys():
-		var source_id: String = str(source_id_variant)
-		var source_files_variant: Variant = LEVEL_FILES.get(source_id, [])
-		if not (source_files_variant is Array):
-			continue
-		var source_files: Array = source_files_variant
-		for file_variant: Variant in source_files:
-			var file_name: String = str(file_variant)
-			_level_helper.call("_load_prototype", source_id, file_name)
-			files_loaded += 1
-			var ratio: float = float(files_loaded) / float(total_files)
-			_update_progress(
-				lerpf(0.63, 0.96, ratio),
-				"LOADING ENVIRONMENT MODEL  %d / %d" % [files_loaded, total_files]
-			)
-			await get_tree().process_frame
-	return true
+func _prepare_environment_assets() -> bool:
+	_update_progress(0.45, "DOWNLOADING EXACT POLY HAVEN ENVIRONMENTS")
+	if _environment_library == null or not _environment_library.has_method("prepare"):
+		return false
+	var prepared_variant: Variant = await _environment_library.call("prepare")
+	var prepared: bool = bool(prepared_variant)
+	_update_progress(
+		0.98,
+		"EXACT ENVIRONMENT MODELS READY" if prepared else "REQUIRED ENVIRONMENT ASSET FAILED"
+	)
+	await get_tree().process_frame
+	return prepared
 
 
 func _update_progress(progress_value: float, status_text: String) -> void:
