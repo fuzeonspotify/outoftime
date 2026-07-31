@@ -5,6 +5,11 @@ signal cue_missing(cue_id: String, expected_path: String)
 
 const CUES_PATH: String = "res://data/music_cues.json"
 const MUSIC_VOLUME_LINEAR: float = 0.30
+const DEFAULT_CROSSFADE_SECONDS: float = 4.0
+const MIN_CROSSFADE_SECONDS: float = 2.75
+const DEFAULT_STOP_FADE_SECONDS: float = 3.5
+const MIN_STOP_FADE_SECONDS: float = 2.5
+const DIALOGUE_DUCK_SECONDS: float = 0.85
 
 var _cues: Dictionary = {}
 var _players: Array[AudioStreamPlayer] = []
@@ -41,7 +46,11 @@ func _load_cues() -> void:
 	_cues = parsed as Dictionary
 
 
-func play_cue(cue_id: String, fade_seconds: float = 1.2, start_offset: float = 0.0) -> bool:
+func play_cue(
+	cue_id: String,
+	fade_seconds: float = DEFAULT_CROSSFADE_SECONDS,
+	start_offset: float = 0.0
+) -> bool:
 	if _should_suppress_cue(cue_id):
 		return false
 	if not _cues.has(cue_id):
@@ -70,7 +79,7 @@ func play_cue(cue_id: String, fade_seconds: float = 1.2, start_offset: float = 0
 	next_player.volume_linear = 0.0
 	next_player.play(maxf(0.0, start_offset))
 
-	var duration: float = maxf(0.05, fade_seconds)
+	var duration: float = maxf(MIN_CROSSFADE_SECONDS, fade_seconds)
 	var target_volume: float = MUSIC_VOLUME_LINEAR * (0.42 if _dialogue_ducked else 1.0)
 	var tween: Tween = create_tween().set_parallel(true)
 	tween.tween_property(previous_player, "volume_linear", 0.0, duration)
@@ -83,7 +92,7 @@ func play_cue(cue_id: String, fade_seconds: float = 1.2, start_offset: float = 0
 	return true
 
 
-func stop_music(fade_seconds: float = 1.0) -> void:
+func stop_music(fade_seconds: float = DEFAULT_STOP_FADE_SECONDS) -> void:
 	if _players.is_empty():
 		return
 	var playing_players: Array[AudioStreamPlayer] = []
@@ -93,7 +102,7 @@ func stop_music(fade_seconds: float = 1.0) -> void:
 	if playing_players.is_empty():
 		return
 
-	var duration: float = maxf(0.05, fade_seconds)
+	var duration: float = maxf(MIN_STOP_FADE_SECONDS, fade_seconds)
 	var tween: Tween = create_tween().set_parallel(true)
 	for player: AudioStreamPlayer in playing_players:
 		tween.tween_property(player, "volume_linear", 0.0, duration)
@@ -108,7 +117,7 @@ func duck_for_dialogue(enabled: bool) -> void:
 	var tween: Tween = create_tween().set_parallel(true)
 	for player: AudioStreamPlayer in _players:
 		if player.playing:
-			tween.tween_property(player, "volume_linear", target_volume, 0.35)
+			tween.tween_property(player, "volume_linear", target_volume, DIALOGUE_DUCK_SECONDS)
 
 
 func get_cue(cue_id: String) -> Dictionary:
