@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/road_memory.gd" id="1_road"]
 [ext_resource type="Script" path="res://scripts/world/road_audio.gd" id="2_audio"]
@@ -6,6 +6,7 @@
 [ext_resource type="Script" path="res://scripts/models/world_model_upgrade.gd" id="4_models"]
 [ext_resource type="Script" path="res://scripts/models/model_alignment_fixes.gd" id="5_alignment"]
 [ext_resource type="Script" path="res://scripts/world/kenney_level_expansion.gd" id="6_kenney"]
+[ext_resource type="Script" path="res://scripts/world/road_to_void_copy_fix.gd" id="7_void_copy"]
 
 [node name="RoadMemory" type="Node3D"]
 script = ExtResource("1_road")
@@ -24,3 +25,6 @@ script = ExtResource("5_alignment")
 
 [node name="KenneyLevelExpansion" type="Node" parent="."]
 script = ExtResource("6_kenney")
+
+[node name="RoadToVoidCopyFix" type="Node" parent="."]
+script = ExtResource("7_void_copy")
