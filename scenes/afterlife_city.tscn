@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/heaven_gate_finale_release.gd" id="1_heaven"]
-[ext_resource type="Script" path="res://scripts/models/realistic_environment_replacements.gd" id="2_exact_environment"]
+[ext_resource type="Script" path="res://scripts/models/realistic_environment_replacements_release.gd" id="2_exact_environment"]
 
 [node name="HeavenDescent" type="Node3D"]
 script = ExtResource("1_heaven")
