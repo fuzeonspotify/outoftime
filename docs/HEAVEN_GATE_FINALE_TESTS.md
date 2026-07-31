@@ -1,16 +1,33 @@
-# Heaven Gate Finale — Manual Test Matrix
+# Crash, Heaven Gate, and Lead Models — Manual Test Matrix
 
 Run these checks in an actual Godot 4.7 build after clearing the Output panel.
 
-## Gate interruption
+## Centered bridge crash
+
+- Complete or fail the Memory Road and confirm there is a readable pause before the crash begins.
+- Confirm the blockade is built directly across the center of the road rather than beside it.
+- Confirm the car approaches the centered blockade without an unexplained sideways teleport.
+- Confirm the approach lasts about 3.5 seconds and gives the player time to see the obstacle.
+- Confirm the first collision destroys the centered barrier pieces.
+- Confirm the car then slides toward the right rail for about 2.3 seconds.
+- Confirm the right guardrail breaks near the rail impact rather than during the first collision.
+- Confirm the fall remains visible for about 4.1 seconds before the whiteout begins.
+- Confirm the Car Concept keeps distinct paint, glass, interior and wheel materials through the crash.
+
+## Gate midpoint interruption
 
 - Reach at least 92% Heaven corruption and verify the false gate becomes interactable.
-- Hold E once and confirm the portal begins opening before the attack interrupts it.
-- Confirm the nearest final-row dark angel leaves formation and crosses the aisle smoothly.
-- Confirm the active camera matches the third-person view before moving to player eye height.
-- Confirm the player model and HUD disappear only after the first-person camera takes control.
-- Confirm the camera ends close to the angel face without clipping behind it.
-- Confirm movement, mouse look, jumping, pausing and gate interaction are locked during the attack.
+- Confirm the first hold duration is about 2.8 seconds.
+- Start holding E and watch the progress bar.
+- Confirm the angel attack begins when the first bar reaches 50%, before E is released and before normal gate activation completes.
+- Confirm releasing E after the interruption cannot activate the gate a second time.
+- Confirm the portal remains visually half-open as the attack starts.
+- Confirm the selected dark angel takes about 3.1 seconds to cross the aisle instead of teleporting to the player.
+- Confirm the camera moves from third person to eye height over about 1.25 seconds.
+- Confirm the player model and HUD disappear only after the first-person camera reaches eye height.
+- Confirm the separate pull into the angel's face takes about 1.45 seconds.
+- Confirm the QTE waits through a brief close-face hold before appearing.
+- Confirm movement, mouse look, jumping, pausing and additional gate interaction are locked during the attack.
 
 ## W/A/S/D survival sequence
 
@@ -41,11 +58,14 @@ Run these checks in an actual Godot 4.7 build after clearing the Output panel.
 - Confirm the gate is re-armed with the prompt `Open the golden portal`.
 - Hold E a second time and confirm the original fade to the Ruined Club occurs once.
 
-## Runtime model checks
+## Complete rigged lead models
 
-- On a clean cache, confirm startup displays character and realistic vehicle preparation states.
-- Confirm the player uses the scanned skull while the body still animates during movement.
-- Confirm the ghost woman uses the spectral detailed body in both Cemetery and Chamber.
-- Confirm the Car Concept loads on the Memory Road and remains visible through the crash.
-- Confirm sample logos are hidden where node or material naming exposes them.
-- Disconnect the network, clear optional caches and confirm all procedural fallbacks remain playable.
+- On a clean v2 character cache, confirm startup displays the character-model preparation state.
+- Confirm the main character is one complete skinned body named `RiggedMainCharacter`.
+- Confirm the old procedural skeleton meshes are hidden only when that complete rig loads successfully.
+- Confirm the player armature moves its arms, forearms, thighs, shins, spine, head and hips during walking, sprinting and jumping.
+- Confirm the player does not appear as the old skeleton with a replacement head.
+- Confirm the ghost woman is one complete skinned body named `RiggedGhostWoman` in both Cemetery and Chamber.
+- Confirm no separate corset top, synthetic head or hair cap is added over the ghost model.
+- Confirm her spine, head and arms move subtly during idle presentation.
+- Disconnect the network and clear the v2 optional cache; confirm the procedural story fallbacks remain playable without partial hybrid models.
