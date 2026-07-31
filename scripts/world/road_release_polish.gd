@@ -44,10 +44,10 @@ func _apply_release_copy() -> void:
 		var label: Label = node as Label
 		if label == null:
 			continue
-		if label.text.contains("opens into a city that should not exist"):
-			label.text = "The memory road ends where gravity has been torn apart."
+		if label.text.contains("opens into a city that should not exist") or label.text.contains("gravity has been torn apart"):
+			label.text = "The memory road ends at a crossing no living train could reach."
 		elif label.text == "PONTIAC  //  MEMORY BRIDGE":
-			label.text = "CHAPTER II  //  THE MEMORY BRIDGE"
+			label.text = "CHAPTER II  //  THE MEMORY ROAD"
 		elif label.text.contains("DODGE THE DEAD"):
 			label.text = "A / D  STEER    •    MOUSE WHEEL  CAMERA    •    AVOID FAILED MEMORIES"
 		_style_label(label)
@@ -57,9 +57,9 @@ func _apply_release_copy() -> void:
 		var button: Button = node as Button
 		if button == null:
 			continue
-		if button.text == "ENTER THE CITY":
-			button.text = "ENTER THE VOID"
-		var is_primary: bool = button.text == "ENTER THE VOID"
+		if button.text == "ENTER THE CITY" or button.text == "ENTER THE VOID":
+			button.text = "BOARD THE MEMORY TRAIN"
+		var is_primary: bool = button.text == "BOARD THE MEMORY TRAIN"
 		UI_STYLE.apply_button(button, is_primary)
 
 
@@ -124,7 +124,7 @@ func _build_pause_menu() -> void:
 	heading.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	stack.add_child(heading)
 
-	var chapter: Label = UI_STYLE.make_label("CHAPTER II  //  THE MEMORY BRIDGE", 13, UI_STYLE.COLOR_ACCENT_COOL)
+	var chapter: Label = UI_STYLE.make_label("CHAPTER II  //  THE MEMORY ROAD", 13, UI_STYLE.COLOR_ACCENT_COOL)
 	chapter.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	stack.add_child(chapter)
 
