@@ -2,6 +2,7 @@ extends Node
 
 signal cue_started(cue_id: String)
 signal cue_missing(cue_id: String, expected_path: String)
+signal music_library_ready
 
 const CUES_PATH: String = "res://data/music_cues.json"
 const MUSIC_VOLUME_LINEAR: float = 0.30
@@ -12,9 +13,12 @@ const MIN_STOP_FADE_SECONDS: float = 2.5
 const DIALOGUE_DUCK_SECONDS: float = 0.85
 
 var _cues: Dictionary = {}
+var _stream_cache: Dictionary = {}
 var _players: Array[AudioStreamPlayer] = []
 var _active_index: int = 0
 var _dialogue_ducked: bool = false
+var _music_library_preparing: bool = false
+var _music_library_is_ready: bool = false
 
 
 func _ready() -> void:
@@ -27,6 +31,17 @@ func _ready() -> void:
 		add_child(player)
 		_players.append(player)
 	_load_cues()
+
+
+func prepare_music_library() -> void:
+	if _music_library_is_ready or _music_library_preparing:
+		return
+	_music_library_preparing = true
+	_preload_available_streams.call_deferred()
+
+
+func is_music_library_ready() -> bool:
+	return _music_library_is_ready
 
 
 func _load_cues() -> void:
@@ -44,6 +59,23 @@ func _load_cues() -> void:
 		push_error("Music cue file contains invalid JSON.")
 		return
 	_cues = parsed as Dictionary
+
+
+func _preload_available_streams() -> void:
+	for cue_id_variant: Variant in _cues.keys():
+		var cue_id: String = str(cue_id_variant)
+		var cue_variant: Variant = _cues.get(cue_id)
+		if cue_variant is Dictionary:
+			var cue: Dictionary = cue_variant
+			var audio_path: String = str(cue.get("path", ""))
+			if not audio_path.is_empty() and ResourceLoader.exists(audio_path):
+				var stream: AudioStream = load(audio_path) as AudioStream
+				if stream != null:
+					_stream_cache[cue_id] = stream
+		await get_tree().process_frame
+	_music_library_preparing = false
+	_music_library_is_ready = true
+	music_library_ready.emit()
 
 
 func play_cue(
@@ -64,7 +96,11 @@ func play_cue(
 		push_warning("Music file not found for '%s': %s" % [cue_id, audio_path])
 		return false
 
-	var stream: AudioStream = load(audio_path) as AudioStream
+	var stream: AudioStream = _stream_cache.get(cue_id) as AudioStream
+	if stream == null:
+		stream = load(audio_path) as AudioStream
+		if stream != null:
+			_stream_cache[cue_id] = stream
 	if stream == null:
 		cue_missing.emit(cue_id, audio_path)
 		push_warning("Could not load music file for '%s': %s" % [cue_id, audio_path])
@@ -127,6 +163,8 @@ func get_cue(cue_id: String) -> Dictionary:
 
 
 func has_audio(cue_id: String) -> bool:
+	if _stream_cache.has(cue_id):
+		return true
 	var cue: Dictionary = get_cue(cue_id)
 	if cue.is_empty():
 		return false
