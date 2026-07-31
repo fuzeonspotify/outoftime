@@ -63,7 +63,7 @@ func get_stream(cue_id: String) -> AudioStream:
 	var rule_variant: Variant = CUE_RULES.get(cue_id)
 	if not (rule_variant is Dictionary):
 		return null
-	var rule: Dictionary = rule_variant as Dictionary
+	var rule: Dictionary = rule_variant
 	var pack_id: String = str(rule.get("pack", ""))
 	var keywords_variant: Variant = rule.get("keywords", [])
 	var keywords: Array[String] = []
@@ -83,7 +83,8 @@ func _prepare_library() -> void:
 		var pack_id: String = str(pack_id_variant)
 		var source_variant: Variant = PACKS.get(pack_id)
 		if source_variant is Dictionary:
-			await _ensure_pack(pack_id, source_variant as Dictionary)
+			var source: Dictionary = source_variant
+			await _ensure_pack(pack_id, source)
 	_ready = true
 	library_ready.emit()
 
@@ -163,7 +164,8 @@ func _download_bytes(url: String) -> PackedByteArray:
 		return PackedByteArray()
 	var body_variant: Variant = response[3]
 	if body_variant is PackedByteArray:
-		return body_variant as PackedByteArray
+		var body: PackedByteArray = body_variant
+		return body
 	return PackedByteArray()
 
 
@@ -225,7 +227,7 @@ func _matching_paths(pack_id: String, keywords: Array[String]) -> Array[String]:
 	var pack_paths_variant: Variant = _paths_by_pack.get(pack_id)
 	if not (pack_paths_variant is Array):
 		return results
-	var pack_paths: Array = pack_paths_variant as Array
+	var pack_paths: Array = pack_paths_variant
 	for path_variant: Variant in pack_paths:
 		var path: String = str(path_variant)
 		var normalized_name: String = path.get_file().get_basename().to_lower().replace("-", "").replace("_", "")
@@ -241,12 +243,13 @@ func _load_stream(path: String) -> AudioStream:
 	var cached_variant: Variant = _stream_cache.get(path)
 	if cached_variant is AudioStream:
 		return cached_variant as AudioStream
-	var stream: AudioStream
+	var stream: AudioStream = null
 	var lower_path: String = path.to_lower()
+	var absolute_path: String = ProjectSettings.globalize_path(path)
 	if lower_path.ends_with(".ogg"):
-		stream = AudioStreamOggVorbis.load_from_file(path)
+		stream = AudioStreamOggVorbis.load_from_file(absolute_path)
 	elif lower_path.ends_with(".wav"):
-		stream = AudioStreamWAV.load_from_file(path)
+		stream = AudioStreamWAV.load_from_file(absolute_path)
 	if stream != null:
 		_stream_cache[path] = stream
 	return stream
