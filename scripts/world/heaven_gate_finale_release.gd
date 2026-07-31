@@ -8,9 +8,14 @@ const TURN_HOLD_SECONDS: float = 0.32
 const ANGEL_WINDUP_SECONDS: float = 0.16
 const ANGEL_LUNGE_SECONDS: float = 0.62
 const JUMPSCARE_HOLD_SECONDS: float = 0.58
+const HOLD_GOLD_ALPHA: float = 0.065
+const GATE_GOLD_ALPHA: float = 0.085
+const LUNGE_BLOOD_ALPHA: float = 0.12
+const IMPACT_BLOOD_ALPHA: float = 0.26
 
 var _halfway_attack_triggered: bool = false
 var _live_hold_progress_enabled: bool = false
+var _scare_fill_light: SpotLight3D
 
 
 func _ready() -> void:
@@ -47,7 +52,7 @@ func _on_gate_hold_progressed(player: Node, progress: float) -> void:
 	var hold_progress: float = clampf(progress, 0.0, 1.0)
 	var opening_strength: float = smoothstep(0.0, ATTACK_TRIGGER_PROGRESS, hold_progress)
 	_gate_root.scale = Vector3.ONE * lerpf(1.0, 1.065, opening_strength)
-	_gold_flash.color.a = lerpf(0.0, 0.20, opening_strength)
+	_gold_flash.color.a = lerpf(0.0, HOLD_GOLD_ALPHA, opening_strength)
 	if hold_progress < ATTACK_TRIGGER_PROGRESS:
 		return
 	_trigger_halfway_attack(player)
@@ -103,6 +108,7 @@ func _start_gate_encounter(player: Node) -> void:
 	_scare_instruction.text = "SOMETHING IS STANDING BESIDE YOU"
 	_finale_overlay.visible = true
 	_finale_overlay.modulate.a = 0.0
+	_blackout.color.a = 0.0
 	var overlay_tween: Tween = create_tween()
 	overlay_tween.tween_property(_finale_overlay, "modulate:a", 1.0, 0.16)
 
@@ -113,7 +119,8 @@ func _start_gate_encounter(player: Node) -> void:
 		Vector3(1.085, 1.085, 1.085),
 		0.42
 	).set_trans(Tween.TRANS_SINE)
-	gate_tween.tween_property(_gold_flash, "color:a", 0.30, 0.42).set_trans(Tween.TRANS_SINE)
+	gate_tween.tween_property(_gold_flash, "color:a", GATE_GOLD_ALPHA, 0.42).set_trans(Tween.TRANS_SINE)
+	gate_tween.tween_property(_blackout, "color:a", 0.08, 0.42).set_trans(Tween.TRANS_SINE)
 
 	var player_head: Vector3 = _player.global_position + Vector3.UP * 1.62
 	var attacker_face: Vector3 = _get_attacker_face_position()
@@ -126,6 +133,7 @@ func _start_gate_encounter(player: Node) -> void:
 	_scare_camera_forward = attack_direction
 
 	_build_first_person_camera()
+	_install_scare_fill_light()
 	_store_and_hide_player_presentation(true)
 	_scare_camera_rig.look_at(attacker_face, Vector3.UP)
 	_scare_trauma = 0.18
@@ -139,7 +147,7 @@ func _start_gate_encounter(player: Node) -> void:
 	throw_tween.tween_property(
 		_scare_camera,
 		"fov",
-		74.0,
+		72.0,
 		FIRST_PERSON_THROW_SECONDS
 	).set_trans(Tween.TRANS_QUINT)
 	await get_tree().create_timer(FIRST_PERSON_THROW_SECONDS).timeout
@@ -165,27 +173,54 @@ func _start_gate_encounter(player: Node) -> void:
 
 	_scare_title.text = "SHE MOVES"
 	_scare_instruction.text = "TOO FAST"
-	var lens_tween: Tween = create_tween()
+	var lens_tween: Tween = create_tween().set_parallel(true)
 	lens_tween.tween_property(
 		_scare_camera,
 		"fov",
 		60.0,
 		ANGEL_WINDUP_SECONDS + ANGEL_LUNGE_SECONDS
 	).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
+	lens_tween.tween_property(
+		_blackout,
+		"color:a",
+		0.13,
+		ANGEL_WINDUP_SECONDS + ANGEL_LUNGE_SECONDS
+	).set_trans(Tween.TRANS_SINE)
 	await get_tree().create_timer(ANGEL_WINDUP_SECONDS).timeout
 
 	_gate_scare_audio.call("play_grab")
 	_audio.call("set_corruption", 1.0)
 	_scare_trauma = 0.46
-	_blood_flash.color.a = 0.34
+	_blood_flash.color.a = LUNGE_BLOOD_ALPHA
 	var blood_tween: Tween = create_tween()
-	blood_tween.tween_property(_blood_flash, "color:a", 0.05, ANGEL_LUNGE_SECONDS)
+	blood_tween.tween_property(_blood_flash, "color:a", 0.025, ANGEL_LUNGE_SECONDS)
 	await get_tree().create_timer(ANGEL_LUNGE_SECONDS * 0.76).timeout
 
 	_scare_trauma = 1.0
-	_blood_flash.color.a = 0.62
+	_blood_flash.color.a = IMPACT_BLOOD_ALPHA
+	if _scare_fill_light != null:
+		var light_punch: Tween = create_tween()
+		light_punch.tween_property(_scare_fill_light, "light_energy", 1.05, 0.08)
+		light_punch.tween_property(_scare_fill_light, "light_energy", 0.72, JUMPSCARE_HOLD_SECONDS)
 	_scare_title.text = "SHE IS IN YOUR FACE"
 	_scare_instruction.text = "BREAK HER GRIP"
 	await get_tree().create_timer(ANGEL_LUNGE_SECONDS * 0.24).timeout
 	await get_tree().create_timer(JUMPSCARE_HOLD_SECONDS).timeout
 	_begin_qte()
+
+
+func _install_scare_fill_light() -> void:
+	if _scare_camera == null:
+		return
+	if _scare_fill_light != null and is_instance_valid(_scare_fill_light):
+		return
+	_scare_fill_light = SpotLight3D.new()
+	_scare_fill_light.name = "AngelFaceVisibilityLight"
+	_scare_fill_light.position = Vector3(0.0, 0.02, -0.08)
+	_scare_fill_light.light_color = Color("b98ea8")
+	_scare_fill_light.light_energy = 0.72
+	_scare_fill_light.shadow_enabled = false
+	_scare_fill_light.spot_range = 5.2
+	_scare_fill_light.spot_angle = 34.0
+	_scare_fill_light.spot_attenuation = 1.45
+	_scare_camera.add_child(_scare_fill_light)
