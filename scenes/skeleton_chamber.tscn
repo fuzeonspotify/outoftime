@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/skeleton_chamber.gd" id="1_chamber"]
 [ext_resource type="Script" path="res://scripts/world/environment_art_pass.gd" id="2_art"]
 [ext_resource type="Script" path="res://scripts/world/kenney_level_expansion.gd" id="3_kenney"]
 [ext_resource type="Script" path="res://scripts/ui/scene_ui_polish.gd" id="4_ui"]
 [ext_resource type="Script" path="res://scripts/world/interaction_release_polish.gd" id="5_interactions"]
+[ext_resource type="Script" path="res://scripts/dialogue/chamber_dialogue_integration.gd" id="6_dialogue"]
 
 [node name="SkeletonChamber" type="Node3D"]
 script = ExtResource("1_chamber")
@@ -20,3 +21,6 @@ script = ExtResource("4_ui")
 
 [node name="InteractionReleasePolish" type="Node" parent="."]
 script = ExtResource("5_interactions")
+
+[node name="ChamberDialogueIntegration" type="Node" parent="."]
+script = ExtResource("6_dialogue")
