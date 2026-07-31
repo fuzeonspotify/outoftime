@@ -3,14 +3,10 @@ extends Node3D
 const PLAYER_SCENE: PackedScene = preload("res://scenes/player.tscn")
 const INTERACTABLE_SCRIPT: Script = preload("res://scripts/world/interactable.gd")
 const CHAMBER_SCENE_PATH: String = "res://scenes/skeleton_chamber.tscn"
-const ROOM_HALF_WIDTH: float = 17.0
-const ROOM_FRONT_Z: float = 32.0
-const ROOM_BACK_Z: float = -38.0
 const MAX_STABILITY: float = 100.0
 
 var _player: CharacterBody3D
 var _ghosts: Array[Node3D] = []
-var _breaker_interactions: Array[Area3D] = []
 var _exit_interaction: Area3D
 var _breakers_restored: int = 0
 var _restored_breakers: Dictionary = {}
@@ -159,7 +155,7 @@ func _build_balcony() -> void:
 
 
 func _build_debris() -> void:
-	for debris_index: int in range(18):
+	for _debris_index: int in range(18):
 		var x_position: float = _rng.randf_range(-13.5, 13.5)
 		var z_position: float = _rng.randf_range(-27.0, 28.0)
 		if absf(x_position) < 4.0 and z_position < -22.0:
@@ -202,7 +198,6 @@ func _build_story_interactions() -> void:
 			true
 		)
 		interaction.connect("activated", Callable(self, "_on_breaker_restored").bind(breaker_ids[index]))
-		_breaker_interactions.append(interaction)
 		_create_breaker_visual(breaker_position + Vector3(0.0, 1.1, 0.0))
 
 	_exit_interaction = _create_interaction(
