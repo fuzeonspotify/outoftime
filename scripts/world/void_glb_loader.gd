@@ -4,6 +4,49 @@ const VERSIONED_CACHE_ROOT: String = "user://kenney_void_assets_v2"
 const ZIP_CACHE_ROOT: String = "user://kenney_void_assets"
 
 
+func _start_loading() -> void:
+	_root = get_parent() as Node3D
+	if _root == null or str(_root.name) != "AfterlifeVoid":
+		return
+	if _root.get_node_or_null("VoidGLBModels") != null:
+		return
+	if not StartupPreloader.is_ready():
+		return
+
+	var preloaded_sources: Dictionary = StartupPreloader.get_void_source_models()
+	if preloaded_sources.is_empty():
+		return
+	_source_models = preloaded_sources
+
+	_model_container = Node3D.new()
+	_model_container.name = "VoidGLBModels"
+	_root.add_child(_model_container)
+
+	_build_arrival_station_ruins()
+	await get_tree().process_frame
+	_build_low_gravity_satellites()
+	await get_tree().process_frame
+	_build_inversion_station_ceiling()
+	await get_tree().process_frame
+	_build_drift_field_models()
+	await get_tree().process_frame
+	_build_portal_station_remains()
+	await get_tree().process_frame
+	_build_distant_space_models()
+
+
+func _load_prototype(model_path: String) -> Node3D:
+	if _prototype_cache.has(model_path):
+		return _prototype_cache[model_path] as Node3D
+
+	var startup_prototype: Node3D = StartupPreloader.get_void_prototype(model_path)
+	if startup_prototype != null:
+		_prototype_cache[model_path] = startup_prototype
+		return startup_prototype
+
+	return super._load_prototype(model_path)
+
+
 func _ensure_cache_directories() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(ZIP_CACHE_ROOT))
 	for source_id: String in SOURCE_IDS:
