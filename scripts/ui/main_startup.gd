@@ -38,11 +38,11 @@ func _rewrite_story_copy() -> void:
 			continue
 		match label.text:
 			"Follow a familiar woman through a cemetery, a fractured memory,\na gravityless void, and the rooms that remember how you died.":
-				label.text = "Follow a familiar woman through a cemetery, a fractured road,\na midnight train, and the rooms that remember how you died."
+				label.text = "Follow a familiar woman through a cemetery, a fractured road,\na fatal crash, and a Heaven that changes when you walk away."
 			"CEMETERY  •  MEMORY BRIDGE  •  VOID  •  RUINED CLUB  •  CHAMBER":
-				label.text = "CEMETERY  •  MEMORY ROAD  •  MEMORY TRAIN  •  RUINED CLUB  •  CHAMBER"
+				label.text = "CEMETERY  •  MEMORY ROAD  •  FALSE HEAVEN  •  RUINED CLUB  •  CHAMBER"
 			"WASD\nMove\n\nSHIFT\nSprint\n\nSPACE\nJump\n\nE\nHold to interact\n\nESC\nPause":
-				label.text = "WASD\nMove\n\nSHIFT\nSprint\n\nSPACE\nJump / vault\n\nE\nInteract / confirm track\n\nESC\nPause"
+				label.text = "WASD\nMove / steer\n\nSHIFT\nSprint\n\nSPACE\nJump\n\nE\nHold to interact\n\nESC\nPause"
 
 
 func _build_startup_overlay() -> void:
@@ -109,7 +109,7 @@ func _build_startup_overlay() -> void:
 	stack.add_child(_startup_percent)
 
 	_startup_detail = UI_STYLE.make_label(
-		"Warming the soundtrack, chapter scenes, and optional models now keeps the Memory Train and later transitions uninterrupted.",
+		"Warming the soundtrack, chapter scenes, environment assets, and the CC0 bridge vehicle now keeps the crash and Heaven transition uninterrupted.",
 		12,
 		UI_STYLE.COLOR_TEXT_DIM
 	)
@@ -136,9 +136,9 @@ func _on_startup_preload_completed(used_fallbacks: bool) -> void:
 	_startup_percent.text = "100%"
 	_startup_status.text = "MEMORY ARCHIVE READY"
 	if used_fallbacks:
-		_startup_detail.text = "Some optional online assets were unavailable. Procedural audio and environment fallbacks are active."
+		_startup_detail.text = "Some optional online assets were unavailable. Procedural audio, vehicle, or environment fallbacks are active."
 	else:
-		_startup_detail.text = "Soundtrack, chapter scenes, Memory Train, and environments are warmed for uninterrupted transitions."
+		_startup_detail.text = "Soundtrack, chapter scenes, the bridge vehicle, and environments are warmed for uninterrupted transitions."
 
 	await get_tree().create_timer(0.65).timeout
 	var fade_tween: Tween = create_tween()
