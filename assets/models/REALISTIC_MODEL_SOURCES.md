@@ -2,26 +2,28 @@
 
 These optional models are prepared during the title-screen loading phase and cached under `user://`. No character or vehicle download begins during active gameplay. Procedural scene geometry remains available only as an offline/importer fallback.
 
-## Main player — complete rigged body
+## Main player — complete rigged skeleton
 
-- Asset: **3D Male Base Mesh**
-- Original creator: orange-juice-games
-- Godot mirror/maintainer: BoQsc `Godot-3D-Male-Base-Mesh`
+- Asset: **KayKit Skeleton Minion** (`Skeleton_Minion.glb`)
+- Source: KayKit Character Pack — Skeletons
 - License: Creative Commons CC0 1.0 Universal
-- Runtime package: `male_base_mesh.zip`
-- Model properties: one complete UV-unwrapped male body with a full armature
-- Use in game: the full skinned model replaces the old procedural skeleton geometry and is animated through its `Skeleton3D` bones.
+- Runtime cache: `user://out_of_time_rigged_characters_v3/`
+- Model properties: one complete skinned skeleton character with a `Skeleton3D` armature and embedded animation library
+- Use in game: the complete body replaces every visible procedural player mesh. The runtime controller selects embedded idle, walk, run and airborne animations according to player movement.
 
-When the primary package cannot be loaded, the game attempts Khronos' **Rigged Figure** sample. That fallback contains skins and animations and is licensed under Creative Commons Attribution 4.0 by Cesium.
+When the KayKit skeleton cannot be downloaded or imported, the game attempts Khronos' **Rigged Figure** sample. That fallback contains a complete skin and animation data and is licensed under Creative Commons Attribution 4.0 by Cesium.
 
 ## Ghost woman — complete rigged body
 
-- Asset: **MPFB example avatar (`mpfb.glb`)**
+- Asset: **MPFB example avatar** (`mpfb.glb`)
 - Source: met4citizen `TalkingHead`
 - Creation toolchain: Blender and MPFB / MakeHuman assets
 - License: Creative Commons CC0 1.0 Universal
+- Runtime cache: `user://out_of_time_rigged_characters_v3/`
 - Model properties: complete full-body avatar with a Mixamo-compatible armature
-- Use in game: the complete skinned avatar replaces the old mannequin/extra-head hybrid in both the Cemetery and Chamber. Spectral treatment is applied to the model's existing full-body surfaces; no separate top, head or hair mesh is added by the game.
+- Use in game: the complete skinned avatar replaces all placeholder woman meshes in both the Cemetery and Chamber. Its original opaque PBR surfaces and textures remain intact; ghostliness comes from restrained grading, emission and scene lighting rather than transparent replacement clothing.
+
+When the MPFB avatar is unavailable, the game attempts the complete rigged **KayKit Mage** character under CC0. No head-only, corset-only or synthetic clothing layer is installed by the active character system.
 
 ## Memory Road vehicle
 
@@ -33,4 +35,4 @@ When the primary package cannot be loaded, the game attempts Khronos' **Rigged F
 - Runtime file: `Models/CarConcept/glTF-Binary/CarConcept.glb`
 - Use in game: primary bridge/crash vehicle with its PBR glass, interior, wheels and body materials preserved. Showcase branding is hidden where the model exposes it through mesh or material names.
 
-The Car Concept and Rigged Figure attribution must remain in distributed credits because those optimized assets are CC BY 4.0. The primary player and MPFB ghost-woman models are CC0, but their credits are retained here for provenance.
+The Car Concept and Rigged Figure attribution must remain in distributed credits because those optimized assets are CC BY 4.0. The KayKit and MPFB primary character models are CC0, but their credits are retained here for provenance.
