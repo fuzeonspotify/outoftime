@@ -2,12 +2,12 @@ extends Area3D
 
 signal activated(player: Node)
 
-@export var prompt_text := "Inspect"
-@export_multiline var interaction_message := "Something about this place feels familiar."
-@export var one_shot := false
-@export var music_cue := ""
+@export var prompt_text: String = "Inspect"
+@export_multiline var interaction_message: String = "Something about this place feels familiar."
+@export var one_shot: bool = false
+@export var music_cue: String = ""
 
-var _used := false
+var _used: bool = false
 var _nearby_player: Node
 
 
@@ -24,14 +24,15 @@ func interact(player: Node) -> void:
 		return
 
 	_used = true
+	SFXDirector.play_interaction()
 	if player.has_method("show_interaction_message"):
-		player.show_interaction_message(interaction_message, 5.0)
+		player.call("show_interaction_message", interaction_message, 5.0)
 	if not music_cue.is_empty():
 		MusicDirector.play_cue(music_cue, 1.8)
 	activated.emit(player)
 
 	if one_shot and player.has_method("clear_interaction_target"):
-		player.clear_interaction_target(self)
+		player.call("clear_interaction_target", self)
 
 
 func _on_body_entered(body: Node) -> void:
@@ -39,7 +40,7 @@ func _on_body_entered(body: Node) -> void:
 		return
 	_nearby_player = body
 	if not (one_shot and _used) and body.has_method("set_interaction_target"):
-		body.set_interaction_target(self, prompt_text)
+		body.call("set_interaction_target", self, prompt_text)
 
 
 func _on_body_exited(body: Node) -> void:
@@ -47,4 +48,4 @@ func _on_body_exited(body: Node) -> void:
 		return
 	_nearby_player = null
 	if body.has_method("clear_interaction_target"):
-		body.clear_interaction_target(self)
+		body.call("clear_interaction_target", self)
