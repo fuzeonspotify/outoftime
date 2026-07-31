@@ -14,7 +14,13 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if _player == null or _skeleton == null or not is_instance_valid(_skeleton):
+	if (
+		_player == null
+		or _model_root == null
+		or _skeleton == null
+		or not is_instance_valid(_model_root)
+		or not is_instance_valid(_skeleton)
+	):
 		return
 	_animate_rig(delta)
 
