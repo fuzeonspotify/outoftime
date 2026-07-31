@@ -1,19 +1,22 @@
-extends "res://scripts/assets/kenney_car_library.gd"
+extends Node
 
-const CUSTOM_CAR_PATHS: Array[String] = [
-	"res://assets/models/cars/porsche_911_turbo.glb",
-	"res://assets/models/cars/porsche_911_turbo.gltf"
-]
+const CUSTOM_CAR_PATH: String = "res://assets/models/cars/porsche_911_turbo.glb"
+const CUSTOM_CAR_SCENE: PackedScene = preload(CUSTOM_CAR_PATH)
+
+var _prototype: Node3D
 
 
 func prepare() -> bool:
-	for model_path: String in CUSTOM_CAR_PATHS:
-		if not FileAccess.file_exists(model_path):
-			continue
-		var custom_prototype: Node3D = _load_model_prototype(model_path)
-		if custom_prototype == null:
-			continue
-		_prototype = custom_prototype
-		_selected_model_path = model_path
-		return true
-	return await super.prepare()
+	_prototype = CUSTOM_CAR_SCENE.instantiate() as Node3D
+	if _prototype == null:
+		push_error("REQUIRED MODEL ERROR: porsche_911_turbo.glb could not be instantiated. No backup car is allowed.")
+		return false
+	return true
+
+
+func get_prototype() -> Node3D:
+	return _prototype
+
+
+func get_selected_model_name() -> String:
+	return CUSTOM_CAR_PATH.get_file()
