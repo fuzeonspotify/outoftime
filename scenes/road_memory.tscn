@@ -1,6 +1,6 @@
 [gd_scene load_steps=8 format=3]
 
-[ext_resource type="Script" path="res://scripts/world/road_memory_realistic_release.gd" id="1_road"]
+[ext_resource type="Script" path="res://scripts/world/road_memory_cinematic_release.gd" id="1_road"]
 [ext_resource type="Script" path="res://scripts/world/road_audio.gd" id="2_audio"]
 [ext_resource type="Script" path="res://scripts/world/road_environment_art_pass.gd" id="3_art"]
 [ext_resource type="Script" path="res://scripts/models/model_runtime_alignment.gd" id="5_alignment"]
