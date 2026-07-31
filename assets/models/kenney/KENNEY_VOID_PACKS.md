@@ -27,7 +27,7 @@ The expanded void chapter loads selected GLB models from two official Kenney ass
 
 ## Runtime behavior
 
-`scripts/world/void_glb_expansion_v2.gd` downloads each official ZIP once, preserves the archive folder structure, and extracts GLB files together with their referenced textures.
+`scripts/world/void_glb_loader.gd` downloads each official ZIP once, preserves the archive folder structure, and extracts GLB files together with their referenced textures.
 
 The texture-aware cache is stored under:
 
@@ -37,6 +37,6 @@ Downloaded ZIP archives are kept under:
 
 `user://kenney_void_assets`
 
-The loader searches the extracted model names by descriptive keywords, so minor archive folder-layout differences do not break the chapter. The procedural void geometry remains in place as a fallback if a download or model import fails.
+The loader searches extracted model names by descriptive keywords, so minor archive folder-layout differences do not break the chapter. Procedural void geometry remains in place as a fallback if a download or model import fails.
 
 Attribution is not required for CC0 assets, but these sources are retained for provenance and appreciation.
