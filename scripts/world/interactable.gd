@@ -24,7 +24,6 @@ var _elapsed_time: float = 0.0
 
 
 func _ready() -> void:
-	monitoring = true
 	monitorable = true
 	collision_layer = 2
 	collision_mask = 1
@@ -36,7 +35,12 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	_elapsed_time += delta
-	if _marker_root == null or not show_world_marker or _used:
+	if _marker_root == null:
+		return
+
+	var should_show_marker: bool = show_world_marker and not _used and monitoring
+	_marker_root.visible = should_show_marker
+	if not should_show_marker:
 		return
 
 	var nearby: bool = is_instance_valid(_nearby_player)
@@ -63,7 +67,8 @@ func interact(player: Node) -> void:
 	if one_shot and _used:
 		return
 
-	_used = true
+	if one_shot:
+		_used = true
 	SFXDirector.play_interaction()
 	if player.has_method("show_interaction_message"):
 		player.call(
@@ -90,7 +95,7 @@ func refresh_release_presentation() -> void:
 	_marker_base_height = marker_height
 	if _marker_root != null:
 		_marker_root.position.y = marker_height
-		_marker_root.visible = show_world_marker and not _used
+		_marker_root.visible = show_world_marker and not _used and monitoring
 	if _marker_material != null:
 		_marker_material.albedo_color = Color(marker_color.r, marker_color.g, marker_color.b, 0.48)
 		_marker_material.emission = marker_color
@@ -142,7 +147,7 @@ func _build_world_marker() -> void:
 	_marker_root = Node3D.new()
 	_marker_root.name = "InteractionMarker"
 	_marker_root.position = Vector3(0.0, marker_height, 0.0)
-	_marker_root.visible = show_world_marker and not _used
+	_marker_root.visible = show_world_marker and not _used and monitoring
 	add_child(_marker_root)
 
 	_marker_material = StandardMaterial3D.new()
