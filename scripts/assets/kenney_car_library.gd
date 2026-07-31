@@ -1,10 +1,12 @@
 extends Node
 
+const REALISTIC_CAR_URL: String = "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CarConcept/glTF-Binary/CarConcept.glb"
 const PRIMARY_ARCHIVE_URL: String = "https://www.kenney.nl/media/pages/assets/car-kit/1a312ec241-1775131960/kenney_car-kit.zip"
 const MIRROR_ARCHIVE_URL: String = "https://opengameart.org/sites/default/files/kenney_car-kit_3.1.zip"
-const CACHE_ROOT: String = "user://kenney_car_kit_v1"
+const CACHE_ROOT: String = "user://bridge_vehicle_models_v2"
+const REALISTIC_CAR_PATH: String = CACHE_ROOT + "/CarConcept.glb"
 const ARCHIVE_PATH: String = CACHE_ROOT + "/kenney_car-kit.zip"
-const MODELS_ROOT: String = CACHE_ROOT + "/models"
+const MODELS_ROOT: String = CACHE_ROOT + "/kenney_models"
 const READY_MARKER: String = CACHE_ROOT + "/.ready"
 const EXTRACTION_BATCH_SIZE: int = 12
 
@@ -14,6 +16,10 @@ var _selected_model_path: String = ""
 
 func prepare() -> bool:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(MODELS_ROOT))
+	if await _prepare_realistic_car():
+		_write_ready_marker()
+		return true
+
 	var model_paths: Array[String] = _scan_model_paths()
 	if model_paths.is_empty():
 		var extracted: bool = false
@@ -31,7 +37,6 @@ func prepare() -> bool:
 
 	if model_paths.is_empty() or not _select_and_load_model(model_paths):
 		return false
-
 	_write_ready_marker()
 	return true
 
@@ -42,6 +47,20 @@ func get_prototype() -> Node3D:
 
 func get_selected_model_name() -> String:
 	return _selected_model_path.get_file()
+
+
+func _prepare_realistic_car() -> bool:
+	if not FileAccess.file_exists(REALISTIC_CAR_PATH):
+		var downloaded: bool = await _download_file(REALISTIC_CAR_URL, REALISTIC_CAR_PATH)
+		if not downloaded:
+			return false
+	var realistic_prototype: Node3D = _load_model_prototype(REALISTIC_CAR_PATH)
+	if realistic_prototype == null:
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(REALISTIC_CAR_PATH))
+		return false
+	_prototype = realistic_prototype
+	_selected_model_path = REALISTIC_CAR_PATH
+	return true
 
 
 func _download_archive() -> bool:
@@ -62,12 +81,10 @@ func _download_file(remote_url: String, local_path: String) -> bool:
 	request_node.timeout = 30.0
 	request_node.download_file = local_path
 	add_child(request_node)
-
 	var request_error: Error = request_node.request(remote_url)
 	if request_error != OK:
 		request_node.queue_free()
 		return false
-
 	var response: Array = await request_node.request_completed
 	request_node.queue_free()
 	var result_code: int = int(response[0])
@@ -88,22 +105,17 @@ func _extract_archive() -> bool:
 	var open_error: Error = reader.open(ProjectSettings.globalize_path(ARCHIVE_PATH))
 	if open_error != OK:
 		return false
-
 	var extracted_models: int = 0
 	var processed_files: int = 0
-	var archive_files: PackedStringArray = reader.get_files()
-	for internal_path: String in archive_files:
+	for internal_path: String in reader.get_files():
 		var normalized_path: String = internal_path.replace("\\", "/")
 		if normalized_path.ends_with("/") or normalized_path.contains(".."):
 			continue
 		var lower_path: String = normalized_path.to_lower()
 		if not _should_extract_file(lower_path):
 			continue
-
 		var destination_path: String = MODELS_ROOT.path_join(normalized_path)
-		DirAccess.make_dir_recursive_absolute(
-			ProjectSettings.globalize_path(destination_path.get_base_dir())
-		)
+		DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(destination_path.get_base_dir()))
 		var bytes: PackedByteArray = reader.read_file(internal_path)
 		if bytes.is_empty():
 			continue
@@ -117,7 +129,6 @@ func _extract_archive() -> bool:
 		processed_files += 1
 		if processed_files % EXTRACTION_BATCH_SIZE == 0:
 			await get_tree().process_frame
-
 	reader.close()
 	return extracted_models > 0
 
@@ -207,12 +218,7 @@ func _score_model_path(model_path: String) -> int:
 func _load_model_prototype(model_path: String) -> Node3D:
 	var document: GLTFDocument = GLTFDocument.new()
 	var state: GLTFState = GLTFState.new()
-	var import_error: Error = document.append_from_file(
-		model_path,
-		state,
-		0,
-		model_path.get_base_dir()
-	)
+	var import_error: Error = document.append_from_file(model_path, state, 0, model_path.get_base_dir())
 	if import_error != OK:
 		return null
 	var generated_scene: Node = document.generate_scene(state)
