@@ -1,28 +1,17 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/ruined_nightclub.gd" id="1_club"]
 [ext_resource type="Script" path="res://scripts/world/nightclub_balcony_access.gd" id="2_balcony"]
-[ext_resource type="Script" path="res://scripts/world/environment_art_pass.gd" id="3_art"]
-[ext_resource type="Script" path="res://scripts/models/world_model_upgrade.gd" id="4_models"]
-[ext_resource type="Script" path="res://scripts/world/kenney_level_runtime.gd" id="5_kenney"]
 [ext_resource type="Script" path="res://scripts/ui/scene_ui_polish.gd" id="6_ui"]
 [ext_resource type="Script" path="res://scripts/world/interaction_release_polish.gd" id="7_interactions"]
 [ext_resource type="Script" path="res://scripts/audio/nightclub_spatial_audio.gd" id="8_audio"]
+[ext_resource type="Script" path="res://scripts/models/realistic_environment_replacements.gd" id="9_exact_environment"]
 
 [node name="RuinedNightclub" type="Node3D"]
 script = ExtResource("1_club")
 
 [node name="NightclubBalconyAccess" type="Node" parent="."]
 script = ExtResource("2_balcony")
-
-[node name="EnvironmentArtPass" type="Node" parent="."]
-script = ExtResource("3_art")
-
-[node name="WorldModelUpgrade" type="Node" parent="."]
-script = ExtResource("4_models")
-
-[node name="KenneyLevelExpansion" type="Node" parent="."]
-script = ExtResource("5_kenney")
 
 [node name="SceneUIPolish" type="Node" parent="."]
 script = ExtResource("6_ui")
@@ -32,3 +21,6 @@ script = ExtResource("7_interactions")
 
 [node name="NightclubSpatialAudio" type="Node" parent="."]
 script = ExtResource("8_audio")
+
+[node name="ExactEnvironmentReplacements" type="Node" parent="."]
+script = ExtResource("9_exact_environment")
