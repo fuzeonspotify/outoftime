@@ -4,11 +4,9 @@ var _canvas: CanvasLayer
 var _signal_label: Label
 var _scanline_root: Control
 var _elapsed_time: float = 0.0
-var _rng: RandomNumberGenerator = RandomNumberGenerator.new()
 
 
 func _ready() -> void:
-	_rng.seed = 6211998
 	_build_overlay.call_deferred()
 
 
@@ -16,9 +14,13 @@ func _process(delta: float) -> void:
 	_elapsed_time += delta
 	if _signal_label != null:
 		var pulse: float = 0.72 + (sin(_elapsed_time * 1.15) * 0.5 + 0.5) * 0.20
-		_signal_label.modulate.a = pulse
+		var signal_modulate: Color = _signal_label.modulate
+		signal_modulate.a = pulse
+		_signal_label.modulate = signal_modulate
 	if _scanline_root != null:
-		_scanline_root.position.y = fmod(_elapsed_time * 7.0, 12.0) - 12.0
+		var scanline_position: Vector2 = _scanline_root.position
+		scanline_position.y = fmod(_elapsed_time * 7.0, 12.0) - 12.0
+		_scanline_root.position = scanline_position
 
 
 func _build_overlay() -> void:
@@ -65,8 +67,9 @@ func _build_scanlines(root: Control) -> void:
 	for index: int in range(76):
 		var line: ColorRect = ColorRect.new()
 		line.anchor_right = 1.0
-		line.position.y = float(index) * 12.0
-		line.size = Vector2(0.0, 1.0)
+		line.position = Vector2(0.0, float(index) * 12.0)
+		line.offset_right = 0.0
+		line.offset_bottom = 1.0
 		line.color = Color(0.39, 0.25, 0.55, 0.010 if index % 3 != 0 else 0.018)
 		line.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_scanline_root.add_child(line)
@@ -98,15 +101,13 @@ func _create_corner(
 
 	var horizontal: ColorRect = ColorRect.new()
 	horizontal.size = Vector2(46.0, 2.0)
-	horizontal.position.x = -46.0 if anchor_right_side else 0.0
-	horizontal.position.y = -2.0 if anchor_bottom_side else 0.0
+	horizontal.position = Vector2(-46.0 if anchor_right_side else 0.0, -2.0 if anchor_bottom_side else 0.0)
 	horizontal.color = color
 	corner.add_child(horizontal)
 
 	var vertical: ColorRect = ColorRect.new()
 	vertical.size = Vector2(2.0, 46.0)
-	vertical.position.x = -2.0 if anchor_right_side else 0.0
-	vertical.position.y = -46.0 if anchor_bottom_side else 0.0
+	vertical.position = Vector2(-2.0 if anchor_right_side else 0.0, -46.0 if anchor_bottom_side else 0.0)
 	vertical.color = color
 	corner.add_child(vertical)
 
