@@ -10,6 +10,7 @@ const PRE_GRAB_HOLD_SECONDS: float = 0.85
 const POST_PULL_HOLD_SECONDS: float = 1.05
 
 var _halfway_attack_triggered: bool = false
+var _live_hold_progress_enabled: bool = false
 
 
 func _ready() -> void:
@@ -19,6 +20,7 @@ func _ready() -> void:
 	_gate_interaction.call("refresh_release_presentation")
 	if _gate_interaction.has_signal("hold_progressed"):
 		_gate_interaction.connect("hold_progressed", Callable(self, "_on_gate_hold_progressed"))
+		_live_hold_progress_enabled = true
 
 
 func _build_angel_procession() -> void:
@@ -64,7 +66,11 @@ func _on_gate_activated(player: Node) -> void:
 	if _purified:
 		super._on_gate_activated(player)
 		return
-	# Fallback for controllers that do not report live hold progress.
+	# The live-progress controller owns the first attempt and must interrupt it
+	# at exactly 50%. Never start the scare after a completed hold.
+	if _live_hold_progress_enabled:
+		return
+	# Compatibility fallback only for controllers that cannot report progress.
 	_trigger_halfway_attack(player)
 
 
