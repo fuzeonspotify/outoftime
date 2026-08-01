@@ -50,6 +50,36 @@ func _upgrade_cemetery() -> void:
 	)
 
 
+func _upgrade_false_heaven() -> void:
+	# Keep the marble architecture, flowers and chandeliers, but intentionally do
+	# not instantiate the former marble_bust_01 sculpture heads.
+	var arches: Array[Node] = _root.find_children("HeavenArch*", "Node3D", true, false)
+	for arch_index: int in range(arches.size()):
+		var arch: Node3D = arches[arch_index] as Node3D
+		if arch == null:
+			continue
+		var arch_meshes: Array[Node] = arch.find_children("*", "MeshInstance3D", true, false)
+		for node: Node in arch_meshes:
+			var mesh_instance: MeshInstance3D = node as MeshInstance3D
+			if mesh_instance != null and absf(mesh_instance.position.x) > 4.0:
+				_apply_material(mesh_instance, "marble_01")
+		if arch_index % 2 == 0:
+			_place_model(
+				"chandelier_01",
+				Vector3(0.0, 6.15, 0.0),
+				Vector3.ZERO,
+				1.05,
+				arch
+			)
+
+	var flower_clusters: Array[Node3D] = _find_heaven_flower_clusters()
+	for cluster: Node3D in flower_clusters:
+		_hide_mesh_descendants(cluster)
+		_place_model("flower_empodium", Vector3.ZERO, Vector3.ZERO, 1.3, cluster)
+
+	_apply_material_by_markers("marble_01", ["gateroot", "gatepillar", "gatebase"])
+
+
 func _upgrade_road_crash_barriers() -> void:
 	var crash_set: Node3D = _root.get_node_or_null("BridgeCrashSet") as Node3D
 	if crash_set == null:
