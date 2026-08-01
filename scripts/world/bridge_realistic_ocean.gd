@@ -3,10 +3,9 @@ extends Node
 const OCEAN_SHADER: Shader = preload("res://shaders/bridge_realistic_ocean.gdshader")
 const WATER_LEVEL: float = -8.9
 const OCEAN_CENTER_Z: float = -610.0
-const OCEAN_SIZE: float = 4600.0
-const OCEAN_SUBDIVISIONS: int = 220
+const OCEAN_SIZE: float = 3000.0
+const OCEAN_SUBDIVISIONS: int = 384
 const WATER_ENTRY_MARGIN: float = 0.34
-const MAX_TRACKED_SPLASHES: int = 16
 
 var _road: Node3D
 var _ocean_surface: MeshInstance3D
@@ -28,18 +27,30 @@ func _ready() -> void:
 		push_error("REALISTIC OCEAN ERROR: the bridge scene root is unavailable.")
 		return
 
-	_remove_legacy_water.call_deferred()
 	_build_ocean_surface()
-	_enhance_bridge_environment.call_deferred()
 	_build_surface_mist()
 	_build_underwater_fog()
+	_remove_legacy_water.call_deferred()
+	_enhance_bridge_environment.call_deferred()
 	_splash_stream = _build_splash_stream()
 	set_physics_process(true)
-	print("REALISTIC BRIDGE OCEAN READY: 4.6 km wave surface at Y=", WATER_LEVEL)
+	print(
+		"REALISTIC BRIDGE OCEAN READY: ",
+		OCEAN_SIZE,
+		" meter wave surface with ",
+		OCEAN_SUBDIVISIONS,
+		" x ",
+		OCEAN_SUBDIVISIONS,
+		" displacement grid at Y=",
+		WATER_LEVEL
+	)
 
 
 func _physics_process(delta: float) -> void:
 	_wave_time += delta
+	if _ocean_material != null:
+		_ocean_material.set_shader_parameter("ocean_time", _wave_time)
+
 	if _physical_car == null or not is_instance_valid(_physical_car):
 		var candidate: Node = get_tree().get_first_node_in_group("physical_porsche_wreck")
 		_physical_car = candidate as RigidBody3D
@@ -59,7 +70,6 @@ func get_surface_height(world_position: Vector3) -> float:
 	height += _sample_wave(world_xz, Vector2(-0.36, 0.93), 0.097, 0.58, 1.05)
 	height += _sample_wave(world_xz, Vector2(0.98, -0.18), 0.172, 0.27, 1.52)
 	height += _sample_wave(world_xz, Vector2(-0.74, -0.67), 0.285, 0.13, 2.10)
-	height += _sample_wave(world_xz, Vector2(0.21, -0.98), 0.510, 0.055, 2.95)
 	return height
 
 
@@ -96,7 +106,12 @@ func _sample_wave(
 func _remove_legacy_water() -> void:
 	if _road == null:
 		return
-	var legacy_nodes: Array[Node] = _road.find_children("MoonlitWater", "MeshInstance3D", true, false)
+	var legacy_nodes: Array[Node] = _road.find_children(
+		"MoonlitWater",
+		"MeshInstance3D",
+		true,
+		false
+	)
 	for node: Node in legacy_nodes:
 		var legacy_water: MeshInstance3D = node as MeshInstance3D
 		if legacy_water == null:
@@ -125,6 +140,7 @@ func _build_ocean_surface() -> void:
 
 	_ocean_material = ShaderMaterial.new()
 	_ocean_material.shader = OCEAN_SHADER
+	_ocean_material.set_shader_parameter("ocean_time", _wave_time)
 	_ocean_surface.material_override = _ocean_material
 	_road.add_child(_ocean_surface)
 
@@ -132,7 +148,12 @@ func _build_ocean_surface() -> void:
 func _enhance_bridge_environment() -> void:
 	if _road == null:
 		return
-	var environment_nodes: Array[Node] = _road.find_children("*", "WorldEnvironment", true, false)
+	var environment_nodes: Array[Node] = _road.find_children(
+		"*",
+		"WorldEnvironment",
+		true,
+		false
+	)
 	for node: Node in environment_nodes:
 		var world_environment: WorldEnvironment = node as WorldEnvironment
 		if world_environment == null or world_environment.environment == null:
@@ -172,7 +193,10 @@ func _build_surface_mist() -> void:
 	mist.randomness = 0.82
 	mist.fixed_fps = 20
 	mist.local_coords = false
-	mist.visibility_aabb = AABB(Vector3(-130.0, -8.0, -860.0), Vector3(260.0, 22.0, 1720.0))
+	mist.visibility_aabb = AABB(
+		Vector3(-130.0, -8.0, -860.0),
+		Vector3(260.0, 22.0, 1720.0)
+	)
 
 	var process_material: ParticleProcessMaterial = ParticleProcessMaterial.new()
 	process_material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
@@ -236,7 +260,6 @@ func _update_physical_car_water(body: RigidBody3D, delta: float) -> void:
 	var surface_height: float = get_surface_height(body.global_position)
 	var depth: float = surface_height - body.global_position.y
 	var body_id: int = body.get_instance_id()
-
 	if depth < -WATER_ENTRY_MARGIN:
 		return
 
@@ -248,19 +271,22 @@ func _update_physical_car_water(body: RigidBody3D, delta: float) -> void:
 	var submersion: float = clampf((depth + WATER_ENTRY_MARGIN) / 2.4, 0.0, 1.0)
 	var flood_progress: float = smoothstep(2.7, 10.5, water_time)
 	var sealed_buoyancy: float = lerpf(1.16, 0.24, flood_progress)
-
-	var buoyancy_force: Vector3 = Vector3.UP * body.mass * 9.8 * sealed_buoyancy * submersion
+	var buoyancy_force: Vector3 = (
+		Vector3.UP * body.mass * 9.8 * sealed_buoyancy * submersion
+	)
 	var linear_drag_strength: float = 0.72 + submersion * 2.35
 	var drag_force: Vector3 = -body.linear_velocity * body.mass * linear_drag_strength
-	var angular_drag: Vector3 = -body.angular_velocity * body.mass * (0.28 + submersion * 0.72)
+	var angular_drag: Vector3 = (
+		-body.angular_velocity * body.mass * (0.28 + submersion * 0.72)
+	)
 	body.apply_central_force(buoyancy_force + drag_force)
 	body.apply_torque(angular_drag)
 	body.sleeping = false
 
-	# A flooded car eventually becomes negatively buoyant and sinks instead of
-	# hovering forever at the surface.
 	if water_time > 7.0:
-		body.apply_central_force(Vector3.DOWN * body.mass * lerpf(0.0, 3.8, flood_progress))
+		body.apply_central_force(
+			Vector3.DOWN * body.mass * lerpf(0.0, 3.8, flood_progress)
+		)
 
 
 func _register_water_entry(body: RigidBody3D, surface_height: float) -> void:
@@ -274,7 +300,13 @@ func _register_water_entry(body: RigidBody3D, surface_height: float) -> void:
 
 	var resistance_ratio: float = clampf(entry_speed / 34.0, 0.26, 0.62)
 	body.apply_central_impulse(-entry_velocity * body.mass * resistance_ratio)
-	body.apply_central_impulse(Vector3.UP * body.mass * clampf(1.3 + maxf(-entry_velocity.y, 0.0) * 0.10, 1.3, 3.4))
+	body.apply_central_impulse(
+		Vector3.UP * body.mass * clampf(
+			1.3 + maxf(-entry_velocity.y, 0.0) * 0.10,
+			1.3,
+			3.4
+		)
+	)
 	body.apply_torque_impulse(Vector3(
 		_rng.randf_range(-120.0, 120.0),
 		_rng.randf_range(-80.0, 80.0),
@@ -284,7 +316,12 @@ func _register_water_entry(body: RigidBody3D, surface_height: float) -> void:
 	var impact_position: Vector3 = body.global_position
 	impact_position.y = surface_height + 0.08
 	_spawn_major_splash(impact_position, entry_speed)
-	print("PORSCHE OCEAN IMPACT: entered at ", impact_position, " with speed ", entry_speed)
+	print(
+		"PORSCHE OCEAN IMPACT: entered at ",
+		impact_position,
+		" with speed ",
+		entry_speed
+	)
 
 
 func _spawn_major_splash(world_position: Vector3, entry_speed: float) -> void:
@@ -299,7 +336,6 @@ func _spawn_major_splash(world_position: Vector3, entry_speed: float) -> void:
 func _spawn_water_droplets(world_position: Vector3, entry_speed: float) -> void:
 	var particles: GPUParticles3D = GPUParticles3D.new()
 	particles.name = "OceanImpactDroplets_%02d" % _splash_serial
-	particles.global_position = world_position
 	particles.one_shot = true
 	particles.amount = int(clampf(150.0 + entry_speed * 4.5, 170.0, 320.0))
 	particles.lifetime = 2.8
@@ -307,7 +343,10 @@ func _spawn_water_droplets(world_position: Vector3, entry_speed: float) -> void:
 	particles.randomness = 0.68
 	particles.fixed_fps = 45
 	particles.local_coords = false
-	particles.visibility_aabb = AABB(Vector3(-28.0, -8.0, -28.0), Vector3(56.0, 42.0, 56.0))
+	particles.visibility_aabb = AABB(
+		Vector3(-28.0, -8.0, -28.0),
+		Vector3(56.0, 42.0, 56.0)
+	)
 
 	var process_material: ParticleProcessMaterial = ParticleProcessMaterial.new()
 	process_material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
@@ -315,7 +354,11 @@ func _spawn_water_droplets(world_position: Vector3, entry_speed: float) -> void:
 	process_material.direction = Vector3.UP
 	process_material.spread = 48.0
 	process_material.initial_velocity_min = 8.0
-	process_material.initial_velocity_max = clampf(12.0 + entry_speed * 0.46, 14.0, 27.0)
+	process_material.initial_velocity_max = clampf(
+		12.0 + entry_speed * 0.46,
+		14.0,
+		27.0
+	)
 	process_material.gravity = Vector3(0.0, -13.5, 0.0)
 	process_material.scale_min = 0.55
 	process_material.scale_max = 1.65
@@ -339,6 +382,7 @@ func _spawn_water_droplets(world_position: Vector3, entry_speed: float) -> void:
 	droplet_mesh.material = droplet_material
 	particles.draw_pass_1 = droplet_mesh
 	_road.add_child(particles)
+	particles.global_position = world_position
 	particles.restart()
 	particles.finished.connect(Callable(particles, "queue_free"))
 
@@ -346,14 +390,16 @@ func _spawn_water_droplets(world_position: Vector3, entry_speed: float) -> void:
 func _spawn_foam_plume(world_position: Vector3, entry_speed: float) -> void:
 	var plume: GPUParticles3D = GPUParticles3D.new()
 	plume.name = "OceanImpactFoam_%02d" % _splash_serial
-	plume.global_position = world_position + Vector3.UP * 0.20
 	plume.one_shot = true
 	plume.amount = int(clampf(70.0 + entry_speed * 2.0, 80.0, 150.0))
 	plume.lifetime = 3.4
 	plume.explosiveness = 0.92
 	plume.randomness = 0.80
 	plume.local_coords = false
-	plume.visibility_aabb = AABB(Vector3(-24.0, -6.0, -24.0), Vector3(48.0, 26.0, 48.0))
+	plume.visibility_aabb = AABB(
+		Vector3(-24.0, -6.0, -24.0),
+		Vector3(48.0, 26.0, 48.0)
+	)
 
 	var process_material: ParticleProcessMaterial = ParticleProcessMaterial.new()
 	process_material.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_SPHERE
@@ -361,7 +407,11 @@ func _spawn_foam_plume(world_position: Vector3, entry_speed: float) -> void:
 	process_material.direction = Vector3.UP
 	process_material.spread = 62.0
 	process_material.initial_velocity_min = 2.8
-	process_material.initial_velocity_max = clampf(5.0 + entry_speed * 0.18, 6.0, 12.0)
+	process_material.initial_velocity_max = clampf(
+		5.0 + entry_speed * 0.18,
+		6.0,
+		12.0
+	)
 	process_material.gravity = Vector3(0.0, -2.4, 0.0)
 	process_material.scale_min = 0.65
 	process_material.scale_max = 1.8
@@ -384,11 +434,16 @@ func _spawn_foam_plume(world_position: Vector3, entry_speed: float) -> void:
 	quad.material = foam_material
 	plume.draw_pass_1 = quad
 	_road.add_child(plume)
+	plume.global_position = world_position + Vector3.UP * 0.20
 	plume.restart()
 	plume.finished.connect(Callable(plume, "queue_free"))
 
 
-func _spawn_expanding_ring(world_position: Vector3, ring_index: int, entry_speed: float) -> void:
+func _spawn_expanding_ring(
+	world_position: Vector3,
+	ring_index: int,
+	entry_speed: float
+) -> void:
 	var ring: MeshInstance3D = MeshInstance3D.new()
 	ring.name = "OceanImpactRing_%02d_%d" % [_splash_serial, ring_index]
 	var torus: TorusMesh = TorusMesh.new()
@@ -401,21 +456,44 @@ func _spawn_expanding_ring(world_position: Vector3, ring_index: int, entry_speed
 	var ring_material: StandardMaterial3D = StandardMaterial3D.new()
 	ring_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	ring_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	ring_material.albedo_color = Color(0.68, 0.88, 0.94, 0.52 - float(ring_index) * 0.10)
+	ring_material.albedo_color = Color(
+		0.68,
+		0.88,
+		0.94,
+		0.52 - float(ring_index) * 0.10
+	)
 	ring_material.emission_enabled = true
 	ring_material.emission = Color("6da8ba")
 	ring_material.emission_energy_multiplier = 0.24
 	ring.material_override = ring_material
 	_road.add_child(ring)
-	ring.global_position = world_position + Vector3.UP * (0.02 + float(ring_index) * 0.025)
+	ring.global_position = world_position + Vector3.UP * (
+		0.02 + float(ring_index) * 0.025
+	)
 	ring.scale = Vector3.ONE * (0.65 + float(ring_index) * 0.22)
 
+	var delay: float = float(ring_index) * 0.18
 	var duration: float = 2.0 + float(ring_index) * 0.46
-	var maximum_radius: float = clampf(7.5 + entry_speed * 0.28 + float(ring_index) * 4.0, 10.0, 24.0)
-	var tween: Tween = create_tween().set_parallel(true)
-	tween.tween_interval(float(ring_index) * 0.18)
-	tween.tween_property(ring, "scale", Vector3.ONE * maximum_radius, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
-	tween.tween_property(ring_material, "albedo_color:a", 0.0, duration).set_trans(Tween.TRANS_QUAD)
+	var maximum_radius: float = clampf(
+		7.5 + entry_speed * 0.28 + float(ring_index) * 4.0,
+		10.0,
+		24.0
+	)
+	var tween: Tween = create_tween()
+	tween.tween_interval(delay)
+	tween.set_parallel(true)
+	tween.tween_property(
+		ring,
+		"scale",
+		Vector3.ONE * maximum_radius,
+		duration
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(
+		ring_material,
+		"albedo_color:a",
+		0.0,
+		duration
+	).set_trans(Tween.TRANS_QUAD)
 	tween.chain().tween_callback(Callable(ring, "queue_free"))
 
 
@@ -425,7 +503,6 @@ func _play_splash_audio(world_position: Vector3, entry_speed: float) -> void:
 	var player: AudioStreamPlayer3D = AudioStreamPlayer3D.new()
 	player.name = "OceanImpactAudio_%02d" % _splash_serial
 	player.stream = _splash_stream
-	player.global_position = world_position
 	player.volume_linear = clampf(0.18 + entry_speed * 0.008, 0.20, 0.48)
 	player.pitch_scale = _rng.randf_range(0.82, 0.94)
 	player.unit_size = 8.0
@@ -433,6 +510,7 @@ func _play_splash_audio(world_position: Vector3, entry_speed: float) -> void:
 	player.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
 	player.bus = "SFX"
 	_road.add_child(player)
+	player.global_position = world_position
 	player.finished.connect(Callable(player, "queue_free"))
 	player.play()
 
@@ -448,11 +526,19 @@ func _build_splash_stream() -> AudioStreamWAV:
 	for sample_index: int in range(sample_count):
 		var time_value: float = float(sample_index) / float(sample_rate)
 		var envelope: float = exp(-time_value * 3.4)
-		var low_body: float = sin(TAU * (54.0 - time_value * 9.0) * time_value) * exp(-time_value * 5.2)
+		var low_body: float = (
+			sin(TAU * (54.0 - time_value * 9.0) * time_value)
+			* exp(-time_value * 5.2)
+		)
 		var wash_noise: float = local_rng.randf_range(-1.0, 1.0)
-		var secondary_noise: float = local_rng.randf_range(-1.0, 1.0) * sin(TAU * 210.0 * time_value)
+		var secondary_noise: float = (
+			local_rng.randf_range(-1.0, 1.0)
+			* sin(TAU * 210.0 * time_value)
+		)
 		var sample_value: float = clampf(
-			low_body * 0.54 + wash_noise * envelope * 0.40 + secondary_noise * envelope * 0.13,
+			low_body * 0.54
+			+ wash_noise * envelope * 0.40
+			+ secondary_noise * envelope * 0.13,
 			-1.0,
 			1.0
 		)
@@ -466,14 +552,15 @@ func _build_splash_stream() -> AudioStreamWAV:
 	return stream
 
 
-func _make_gradient_texture(colors: Array[Color]) -> GradientTexture1D:
+func _make_gradient_texture(colors: Array) -> GradientTexture1D:
 	var gradient: Gradient = Gradient.new()
 	var offsets: PackedFloat32Array = PackedFloat32Array()
 	var packed_colors: PackedColorArray = PackedColorArray()
 	var denominator: float = float(maxi(1, colors.size() - 1))
 	for color_index: int in range(colors.size()):
 		offsets.append(float(color_index) / denominator)
-		packed_colors.append(colors[color_index])
+		var color_value: Color = colors[color_index]
+		packed_colors.append(color_value)
 	gradient.offsets = offsets
 	gradient.colors = packed_colors
 	var texture: GradientTexture1D = GradientTexture1D.new()
