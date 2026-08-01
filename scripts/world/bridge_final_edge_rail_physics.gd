@@ -63,30 +63,39 @@ func _trigger_final_edge_rail() -> void:
 		var distance_from_hit: float = absf(local_z - IMPACT_LOCAL_Z)
 		var weight: float = clampf(1.0 - distance_from_hit / 34.0, 0.30, 1.0)
 
+		# Sections at the point of contact retain much more effective mass and
+		# receive only a small pre-launch velocity. The physical Porsche must hit
+		# and displace them. Distant sections remain lighter and more explosive.
+		var beam_mass: float = lerpf(55.0, 260.0, weight)
+		var beam_outward_speed: float = lerpf(8.5, 1.2, weight)
+		var beam_upward_speed: float = lerpf(5.5, 0.7, weight)
 		if _spawn_dynamic_piece(
 			"FinalEdgeBeam_%02d" % segment_index,
 			Vector3(EDGE_RAIL_X, 0.45, local_z),
 			Vector3(0.20, 0.30, 3.78),
 			Color("586780"),
-			11.0,
+			beam_mass,
 			Vector3(
-				_rng.randf_range(11.0, 19.0) * weight,
-				_rng.randf_range(4.5, 10.0) * weight,
-				_rng.randf_range(-9.0, 7.0) * weight
+				beam_outward_speed,
+				beam_upward_speed,
+				_rng.randf_range(-4.0, 4.0) * (1.15 - weight * 0.55)
 			)
 		):
 			spawned_count += 1
 
+		var post_mass: float = lerpf(18.0, 92.0, weight)
+		var post_outward_speed: float = lerpf(9.0, 1.8, weight)
+		var post_upward_speed: float = lerpf(6.0, 1.0, weight)
 		if _spawn_dynamic_piece(
 			"FinalEdgePost_%02d" % segment_index,
 			Vector3(EDGE_RAIL_X, 0.90, local_z),
 			Vector3(0.12, 0.85, 0.12),
 			Color("65708b"),
-			5.5,
+			post_mass,
 			Vector3(
-				_rng.randf_range(10.0, 18.0) * weight,
-				_rng.randf_range(5.0, 12.0) * weight,
-				_rng.randf_range(-10.0, 8.0) * weight
+				post_outward_speed,
+				post_upward_speed,
+				_rng.randf_range(-5.0, 5.0) * (1.15 - weight * 0.55)
 			)
 		):
 			spawned_count += 1
