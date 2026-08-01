@@ -26,6 +26,9 @@ if (-not [bool]$ModelInfo.isDownloadable) {
 if ([string]::IsNullOrWhiteSpace([string]$ModelInfo.name)) {
     throw "The Sketchfab model record did not contain a name."
 }
+if ([string]$ModelInfo.name -ne $ExpectedModelName) {
+    throw "Sketchfab returned '$($ModelInfo.name)' instead of the required '$ExpectedModelName'."
+}
 
 $SecureToken = Read-Host "Paste your Sketchfab API token" -AsSecureString
 $TokenPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($SecureToken)
@@ -171,9 +174,9 @@ try {
 # Concrete Roadblock Scan
 
 - **Model:** $($ModelInfo.name)
-- **Creator:** $CreatorDisplayName (`@$CreatorUserName`)
+- **Creator:** $CreatorDisplayName (@$CreatorUserName)
 - **Source:** $ModelPageUrl
-- **Sketchfab model UID:** `$ModelUid`
+- **Sketchfab model UID:** $ModelUid
 - **License:** $LicenseLabel
 - **License URL:** $LicenseUrl
 
