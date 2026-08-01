@@ -84,6 +84,15 @@ func _upgrade_road_crash_barriers() -> void:
 	var crash_set: Node3D = _root.get_node_or_null("BridgeCrashSet") as Node3D
 	if crash_set == null:
 		return
+
+	# The active wreck now owns rigid-body barriers and rails. Replacing their
+	# MeshInstance3D children would strip them from the CollisionObject3D bodies
+	# and recreate the original visual-only failure. Mark this pass complete and
+	# leave the physics hierarchy untouched.
+	if bool(crash_set.get_meta("physics_crash_set", false)):
+		_road_crash_upgraded = true
+		return
+
 	var barriers: Array[Node] = crash_set.find_children(
 		"CenteredBarrier*",
 		"MeshInstance3D",
