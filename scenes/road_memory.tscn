@@ -1,6 +1,6 @@
 [gd_scene load_steps=7 format=3]
 
-[ext_resource type="Script" path="res://scripts/world/road_memory_exact_car.gd" id="1_road"]
+[ext_resource type="Script" path="res://scripts/world/road_memory_crash_physics_release.gd" id="1_road"]
 [ext_resource type="Script" path="res://scripts/world/road_audio.gd" id="2_audio"]
 [ext_resource type="Script" path="res://scripts/world/road_release_polish.gd" id="7_release"]
 [ext_resource type="Script" path="res://scripts/ui/scene_ui_polish.gd" id="8_ui"]
