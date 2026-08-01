@@ -1,5 +1,8 @@
 extends "res://scripts/world/road_memory_exact_car.gd"
 
+const OCEAN_OUTCOME_MAX_SECONDS: float = 12.0
+const OCEAN_IMPACT_HOLD_SECONDS: float = 4.2
+
 
 func _begin_final_car_physics(
 	_crash_set: Node3D,
@@ -69,3 +72,90 @@ func _begin_final_car_physics(
 		body.global_position
 	)
 	return body
+
+
+func _resolve_final_car_outcome(
+	crash_set: Node3D,
+	rail_position: Vector3,
+	physical_car: RigidBody3D
+) -> void:
+	if physical_car == null or not is_instance_valid(physical_car):
+		await super._resolve_final_car_outcome(crash_set, rail_position, physical_car)
+		return
+
+	_set_crash_caption("YOU HAVE DONE THIS BEFORE")
+	_crash_audio.call("start_tinnitus")
+	if _crash_camera != null:
+		_crash_camera.current = true
+
+	var ocean: Node = get_node_or_null("BridgeRealisticOcean")
+	var elapsed: float = 0.0
+	var settled_duration: float = 0.0
+	var ocean_time: float = 0.0
+	var entered_ocean: bool = false
+	var outcome: String = "STILL MOVING"
+	var bridge_height: float = crash_set.global_position.y
+
+	while elapsed < OCEAN_OUTCOME_MAX_SECONDS:
+		await get_tree().physics_frame
+		if physical_car == null or not is_instance_valid(physical_car):
+			outcome = "PHYSICS BODY LOST"
+			break
+
+		var physics_delta: float = get_physics_process_delta_time()
+		elapsed += physics_delta
+		_update_physical_wreck_camera(physical_car, physics_delta)
+
+		var body_entered_ocean: bool = false
+		if ocean != null and ocean.has_method("has_body_entered_water"):
+			body_entered_ocean = bool(ocean.call("has_body_entered_water", physical_car))
+
+		if body_entered_ocean:
+			if not entered_ocean:
+				entered_ocean = true
+				_set_crash_caption("THE OCEAN CATCHES WHAT THE BRIDGE LETS GO")
+				ocean_time = 0.0
+			ocean_time += physics_delta
+			if ocean_time >= OCEAN_IMPACT_HOLD_SECONDS:
+				outcome = "ENTERED OCEAN"
+				break
+			continue
+
+		var linear_speed: float = physical_car.linear_velocity.length()
+		var angular_speed: float = physical_car.angular_velocity.length()
+		var car_is_settled: bool = (
+			linear_speed < 0.72
+			and angular_speed < 0.58
+			and physical_car.global_position.y > bridge_height - 3.0
+		)
+		if car_is_settled:
+			settled_duration += physics_delta
+			if settled_duration >= 1.05:
+				outcome = "CAME TO REST ON BRIDGE"
+				break
+		else:
+			settled_duration = 0.0
+
+		# This is only an emergency guard if the ocean controller is unavailable.
+		if ocean == null and physical_car.global_position.y < bridge_height - 30.0:
+			outcome = "FELL FROM BRIDGE WITHOUT OCEAN RESPONSE"
+			break
+
+	if physical_car != null and is_instance_valid(physical_car):
+		if outcome == "STILL MOVING":
+			if entered_ocean:
+				outcome = "ENTERED OCEAN"
+			elif physical_car.global_position.y < bridge_height - 4.0:
+				outcome = "FELL TOWARD OCEAN"
+			else:
+				outcome = "REMAINED IN MOTION ON BRIDGE"
+		print(
+			"PORSCHE PHYSICS OUTCOME: ",
+			outcome,
+			" at ",
+			physical_car.global_position,
+			" velocity ",
+			physical_car.linear_velocity
+		)
+
+	await _wait_real_time(0.85)
