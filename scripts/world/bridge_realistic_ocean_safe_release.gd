@@ -1,4 +1,4 @@
-extends "res://scripts/world/bridge_realistic_ocean.gd"
+extends "res://scripts/world/bridge_realistic_ocean_release.gd"
 
 
 func _ready() -> void:
@@ -39,5 +39,5 @@ func _finish_safe_ocean_setup() -> void:
 		OCEAN_SUBDIVISIONS,
 		" displacement grid at Y=",
 		WATER_LEVEL,
-		" (deferred safe setup)"
+		" (deferred safe setup with upgraded vehicle splash)"
 	)
