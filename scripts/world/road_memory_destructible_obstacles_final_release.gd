@@ -87,3 +87,35 @@ func _spawn_obstacle_fragment(
 			_demolition_fragment_runtime_serial
 		)
 	return true
+
+
+func _reseed_segment(segment: Node3D) -> void:
+	# Demolished obstacles are queued for deletion while their segment can recycle
+	# during the same frame. Clear the registry first, then inspect Variants by
+	# type and validity before any cast so a stale freed Object is never touched.
+	if segment == null or not is_instance_valid(segment):
+		return
+
+	var segment_name: String = str(segment.name)
+	var current_items_variant: Variant = _segment_obstacles.get(segment_name, [])
+	_segment_obstacles[segment_name] = []
+
+	if typeof(current_items_variant) == TYPE_ARRAY:
+		var current_items: Array = current_items_variant
+		for entry_variant: Variant in current_items:
+			if typeof(entry_variant) != TYPE_DICTIONARY:
+				continue
+			var entry: Dictionary = entry_variant
+			var obstacle_variant: Variant = entry.get("node", null)
+			if typeof(obstacle_variant) != TYPE_OBJECT:
+				continue
+			if not is_instance_valid(obstacle_variant):
+				continue
+			var obstacle_node: Node3D = obstacle_variant as Node3D
+			if obstacle_node == null or obstacle_node.is_queued_for_deletion():
+				continue
+			obstacle_node.queue_free()
+
+	if segment.is_queued_for_deletion():
+		return
+	_seed_segment_obstacles(segment)
