@@ -1,6 +1,13 @@
 extends Node
 
 const TARGET_CHARACTER_HEIGHT: float = 2.10
+# The Sketchfab mesh accessor is authored at 1.70 units tall. Its Armature_25
+# parent carries a 0.01 conversion scale for centimeter-based bones, so a
+# hierarchy-transformed AABB reports roughly 0.017 and must not drive sizing.
+const SOURCE_MESH_HEIGHT: float = 1.70
+const SOURCE_MESH_CENTER_X: float = 0.0884
+const MIN_CHARACTER_SCALE: float = 0.50
+const MAX_CHARACTER_SCALE: float = 2.00
 
 var _records: Array[Dictionary] = []
 var _elapsed: float = 0.0
@@ -106,36 +113,16 @@ func _hide_existing_meshes(woman: Node3D) -> void:
 
 
 func _normalize_character(model: Node3D) -> void:
-	var bounds: AABB = _calculate_local_bounds(model)
-	if bounds.size.y <= 0.001:
-		push_error("Hooded ghost woman has invalid rest-pose bounds.")
-		return
-	var scale_factor: float = TARGET_CHARACTER_HEIGHT / bounds.size.y
-	model.scale = Vector3.ONE * scale_factor
-	var center: Vector3 = bounds.get_center()
-	model.position = Vector3(
-		-center.x * scale_factor,
-		-bounds.position.y * scale_factor,
-		-center.z * scale_factor
+	# Use the authored POSITION accessor height, not the converted armature
+	# hierarchy. This evaluates to about 1.235 instead of the broken 123.5 scale.
+	var scale_factor: float = clampf(
+		TARGET_CHARACTER_HEIGHT / SOURCE_MESH_HEIGHT,
+		MIN_CHARACTER_SCALE,
+		MAX_CHARACTER_SCALE
 	)
-	model.rotation_degrees.y = 180.0
-
-
-func _calculate_local_bounds(model: Node3D) -> AABB:
-	var bounds: AABB = AABB()
-	var has_bounds: bool = false
-	var mesh_nodes: Array[Node] = model.find_children("*", "MeshInstance3D", true, false)
-	for node: Node in mesh_nodes:
-		var mesh_instance: MeshInstance3D = node as MeshInstance3D
-		if mesh_instance == null or mesh_instance.mesh == null:
-			continue
-		var relative_transform: Transform3D = (
-			model.global_transform.affine_inverse() * mesh_instance.global_transform
-		)
-		var mesh_bounds: AABB = relative_transform * mesh_instance.get_aabb()
-		bounds = mesh_bounds if not has_bounds else bounds.merge(mesh_bounds)
-		has_bounds = true
-	return bounds
+	model.scale = Vector3.ONE * scale_factor
+	model.position = Vector3(-SOURCE_MESH_CENTER_X * scale_factor, 0.0, 0.0)
+	model.rotation_degrees = Vector3(0.0, 180.0, 0.0)
 
 
 func _preserve_and_grade_materials(model: Node3D) -> void:
