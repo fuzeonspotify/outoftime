@@ -1,4 +1,4 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/cemetery.gd" id="1_cemetery"]
 [ext_resource type="Script" path="res://scripts/world/cemetery_memorial_alignment.gd" id="2_memorial"]
@@ -8,6 +8,7 @@
 [ext_resource type="Script" path="res://scripts/dialogue/cemetery_dialogue_integration.gd" id="12_dialogue"]
 [ext_resource type="Script" path="res://scripts/models/rigged_ghost_woman.gd" id="13_rigged_woman"]
 [ext_resource type="Script" path="res://scripts/models/realistic_environment_replacements_release.gd" id="14_exact_environment"]
+[ext_resource type="Script" path="res://scripts/world/level_expansion_release.gd" id="15_expansion"]
 
 [node name="Cemetery" type="Node3D"]
 script = ExtResource("1_cemetery")
@@ -32,3 +33,6 @@ script = ExtResource("13_rigged_woman")
 
 [node name="ExactEnvironmentReplacements" type="Node" parent="."]
 script = ExtResource("14_exact_environment")
+
+[node name="LevelExpansion" type="Node" parent="."]
+script = ExtResource("15_expansion")
