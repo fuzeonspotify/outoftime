@@ -7,11 +7,12 @@ uniform vec3 horizon_water_color : source_color = vec3(0.055, 0.135, 0.175);
 uniform vec3 foam_color : source_color = vec3(0.72, 0.86, 0.91);
 uniform vec3 moon_glint_color : source_color = vec3(0.62, 0.78, 1.0);
 uniform vec3 moon_direction = vec3(-0.28, 0.86, 0.42);
+uniform float ocean_time = 0.0;
 uniform float wave_strength : hint_range(0.0, 2.0, 0.01) = 1.0;
 uniform float micro_ripple_strength : hint_range(0.0, 1.0, 0.01) = 0.24;
 uniform float foam_strength : hint_range(0.0, 2.0, 0.01) = 0.86;
-uniform float horizon_fade_start = 620.0;
-uniform float horizon_fade_end = 1850.0;
+uniform float horizon_fade_start = 520.0;
+uniform float horizon_fade_end = 1420.0;
 
 varying vec3 ocean_world_position;
 varying vec3 ocean_world_normal;
@@ -56,7 +57,7 @@ void accumulate_wave(
 	inout vec2 slope
 ) {
 	vec2 wave_direction = normalize(direction);
-	float phase = dot(world_xz, wave_direction) * frequency + TIME * speed;
+	float phase = dot(world_xz, wave_direction) * frequency + ocean_time * speed;
 	float sine_value = sin(phase);
 	float cosine_value = cos(phase);
 	height += sine_value * amplitude;
@@ -73,7 +74,6 @@ void vertex() {
 	accumulate_wave(world_xz, vec2(-0.36, 0.93), 0.097, 0.58 * wave_strength, 1.05, wave_height, wave_slope);
 	accumulate_wave(world_xz, vec2(0.98, -0.18), 0.172, 0.27 * wave_strength, 1.52, wave_height, wave_slope);
 	accumulate_wave(world_xz, vec2(-0.74, -0.67), 0.285, 0.13 * wave_strength, 2.10, wave_height, wave_slope);
-	accumulate_wave(world_xz, vec2(0.21, -0.98), 0.510, 0.055 * wave_strength, 2.95, wave_height, wave_slope);
 
 	VERTEX.y += wave_height;
 	vec3 local_normal = normalize(vec3(-wave_slope.x, 1.0, -wave_slope.y));
@@ -86,8 +86,8 @@ void vertex() {
 void fragment() {
 	vec3 world_normal = normalize(ocean_world_normal);
 	vec2 micro_uv = ocean_world_position.xz * 0.30;
-	float micro_a = fbm(micro_uv + vec2(TIME * 0.19, TIME * -0.11));
-	float micro_b = fbm(micro_uv * 1.77 + vec2(TIME * -0.13, TIME * 0.21));
+	float micro_a = fbm(micro_uv + vec2(ocean_time * 0.19, ocean_time * -0.11));
+	float micro_b = fbm(micro_uv * 1.77 + vec2(ocean_time * -0.13, ocean_time * 0.21));
 	vec2 micro_gradient = vec2(
 		micro_a - fbm(micro_uv + vec2(0.035, 0.0)),
 		micro_b - fbm(micro_uv + vec2(0.0, 0.035))
@@ -105,7 +105,7 @@ void fragment() {
 	float distance_to_camera = distance(CAMERA_POSITION_WORLD, ocean_world_position);
 	float horizon_mix = smoothstep(horizon_fade_start, horizon_fade_end, distance_to_camera);
 
-	float broad_variation = fbm(ocean_world_position.xz * 0.011 + vec2(TIME * 0.006, 0.0));
+	float broad_variation = fbm(ocean_world_position.xz * 0.011 + vec2(ocean_time * 0.006, 0.0));
 	vec3 body_color = mix(deep_water_color, mid_water_color, 0.24 + broad_variation * 0.28);
 	body_color = mix(body_color, horizon_water_color, fresnel * 0.74 + horizon_mix * 0.46);
 
@@ -114,7 +114,7 @@ void fragment() {
 	moon_glint += pow(max(dot(reflected_moon, world_view), 0.0), 24.0) * 0.13;
 	moon_glint *= 0.45 + ocean_crest * 0.85;
 
-	float foam_noise = fbm(ocean_world_position.xz * 0.19 + vec2(TIME * 0.04, TIME * -0.03));
+	float foam_noise = fbm(ocean_world_position.xz * 0.19 + vec2(ocean_time * 0.04, ocean_time * -0.03));
 	float crest_foam = smoothstep(0.52, 0.92, ocean_crest + foam_noise * 0.28);
 	float broken_foam = smoothstep(0.67, 0.89, foam_noise) * smoothstep(0.23, 0.62, ocean_crest);
 	float foam = clamp((crest_foam * 0.72 + broken_foam * 0.55) * foam_strength, 0.0, 0.88);
