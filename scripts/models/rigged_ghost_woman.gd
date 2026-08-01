@@ -52,12 +52,10 @@ func _install_on_woman(woman: Node3D, prototype: Node3D) -> void:
 		complete_model.free()
 		return
 
-	# This Sketchfab model contains only a fast-running clip. The previous code
-	# treated the first available clip as an idle animation, which drove the rig
-	# far away from its authored pose. It also replaced individual bone rotations
-	# with identity-based quaternions when no clip was playing. Keep the exact
-	# imported rest pose instead; motion is applied only to the complete model.
-	_freeze_imported_rig(complete_model, skeleton)
+	# The source model only contains a RunFast clip. Keep every imported
+	# AnimationPlayer disabled and animate small pose offsets ourselves so the
+	# skin never receives the clip's large translation or scale tracks.
+	_prepare_imported_rig_for_idle(complete_model, skeleton)
 
 	_hide_existing_meshes(woman)
 	complete_model.name = "RiggedGhostWomanFullBody"
@@ -65,15 +63,25 @@ func _install_on_woman(woman: Node3D, prototype: Node3D) -> void:
 	_normalize_character(complete_model)
 	_preserve_and_grade_materials(complete_model)
 	_add_spectral_lighting(woman)
-	_records.append({
+
+	var record: Dictionary = {
 		"model": complete_model,
+		"skeleton": skeleton,
 		"base_position": complete_model.position,
 		"base_rotation": complete_model.rotation_degrees,
-		"phase": float(_records.size()) * 0.83
-	})
+		"phase": float(_records.size()) * 0.83,
+		"spine": _find_bone(skeleton, ["spine02", "spine01", "spine"]),
+		"head": _find_bone(skeleton, ["head"]),
+		"left_arm": _find_bone(skeleton, ["leftarm"]),
+		"right_arm": _find_bone(skeleton, ["rightarm"]),
+		"left_forearm": _find_bone(skeleton, ["leftforearm"]),
+		"right_forearm": _find_bone(skeleton, ["rightforearm"])
+	}
+	_apply_idle_pose(record)
+	_records.append(record)
 
 
-func _freeze_imported_rig(model: Node3D, skeleton: Skeleton3D) -> void:
+func _prepare_imported_rig_for_idle(model: Node3D, skeleton: Skeleton3D) -> void:
 	var animation_nodes: Array[Node] = model.find_children(
 		"*",
 		"AnimationPlayer",
@@ -88,7 +96,9 @@ func _freeze_imported_rig(model: Node3D, skeleton: Skeleton3D) -> void:
 		animation_player.process_mode = Node.PROCESS_MODE_DISABLED
 
 	skeleton.reset_bone_poses()
-	skeleton.show_rest_only = true
+	# show_rest_only must be false for the safe pose offsets below to display.
+	# Only bone rotations are changed; positions and scales remain at rest.
+	skeleton.show_rest_only = false
 
 
 func _find_primary_skeleton(model: Node3D) -> Skeleton3D:
@@ -102,6 +112,22 @@ func _find_primary_skeleton(model: Node3D) -> Skeleton3D:
 		selected = candidate
 		largest_bone_count = candidate.get_bone_count()
 	return selected
+
+
+func _find_bone(skeleton: Skeleton3D, aliases: Array[String]) -> int:
+	for alias: String in aliases:
+		var normalized_alias: String = _normalize_bone_name(alias)
+		for bone_index: int in range(skeleton.get_bone_count()):
+			var normalized_name: String = _normalize_bone_name(
+				str(skeleton.get_bone_name(bone_index))
+			)
+			if normalized_name == normalized_alias or normalized_name.contains(normalized_alias):
+				return bone_index
+	return -1
+
+
+func _normalize_bone_name(bone_name: String) -> String:
+	return bone_name.to_lower().replace("mixamorig", "").replace("_", "").replace(".", "").replace("-", "").replace(" ", "")
 
 
 func _hide_existing_meshes(woman: Node3D) -> void:
@@ -122,7 +148,8 @@ func _normalize_character(model: Node3D) -> void:
 	)
 	model.scale = Vector3.ONE * scale_factor
 	model.position = Vector3(-SOURCE_MESH_CENTER_X * scale_factor, 0.0, 0.0)
-	model.rotation_degrees = Vector3(0.0, 180.0, 0.0)
+	# The previous 180-degree correction pointed her away from the player.
+	model.rotation_degrees = Vector3.ZERO
 
 
 func _preserve_and_grade_materials(model: Node3D) -> void:
@@ -181,14 +208,72 @@ func _add_spectral_lighting(woman: Node3D) -> void:
 
 func _update_character(record: Dictionary) -> void:
 	var model: Node3D = record.get("model") as Node3D
-	if model == null or not is_instance_valid(model):
+	var skeleton: Skeleton3D = record.get("skeleton") as Skeleton3D
+	if (
+		model == null
+		or skeleton == null
+		or not is_instance_valid(model)
+		or not is_instance_valid(skeleton)
+	):
 		return
+
 	var base_position: Vector3 = record.get("base_position", Vector3.ZERO)
 	var base_rotation: Vector3 = record.get("base_rotation", Vector3.ZERO)
 	var phase: float = float(record.get("phase", 0.0))
-	model.position = base_position + Vector3.UP * sin(_elapsed * 0.72 + phase) * 0.022
+	model.position = base_position + Vector3.UP * sin(_elapsed * 0.72 + phase) * 0.018
 	model.rotation_degrees = base_rotation + Vector3(
-		0.0,
-		sin(_elapsed * 0.24 + phase) * 0.65,
-		sin(_elapsed * 0.30 + phase) * 0.28
+		sin(_elapsed * 0.31 + phase) * 0.22,
+		sin(_elapsed * 0.24 + phase) * 0.55,
+		sin(_elapsed * 0.29 + phase) * 0.20
 	)
+	_apply_idle_pose(record)
+
+
+func _apply_idle_pose(record: Dictionary) -> void:
+	var skeleton: Skeleton3D = record.get("skeleton") as Skeleton3D
+	if skeleton == null or not is_instance_valid(skeleton):
+		return
+
+	var phase: float = float(record.get("phase", 0.0))
+	var breath: float = sin(_elapsed * 1.05 + phase)
+	var slow_drift: float = sin(_elapsed * 0.41 + phase)
+
+	# Small rotations relative to each bone's authored rest transform create a
+	# relaxed, bowed horror idle without touching bone position or scale tracks.
+	_set_pose_rotation(
+		skeleton,
+		int(record.get("spine", -1)),
+		Quaternion(Vector3.RIGHT, deg_to_rad(-3.0 + breath * 0.65))
+	)
+	_set_pose_rotation(
+		skeleton,
+		int(record.get("head", -1)),
+		Quaternion(Vector3.RIGHT, deg_to_rad(-5.0 + breath * 0.45))
+		* Quaternion(Vector3.UP, deg_to_rad(slow_drift * 2.2))
+	)
+	_set_pose_rotation(
+		skeleton,
+		int(record.get("left_arm", -1)),
+		Quaternion(Vector3.FORWARD, deg_to_rad(-4.5 + breath * 0.35))
+	)
+	_set_pose_rotation(
+		skeleton,
+		int(record.get("right_arm", -1)),
+		Quaternion(Vector3.FORWARD, deg_to_rad(4.5 - breath * 0.35))
+	)
+	_set_pose_rotation(
+		skeleton,
+		int(record.get("left_forearm", -1)),
+		Quaternion(Vector3.RIGHT, deg_to_rad(-2.5 + slow_drift * 0.35))
+	)
+	_set_pose_rotation(
+		skeleton,
+		int(record.get("right_forearm", -1)),
+		Quaternion(Vector3.RIGHT, deg_to_rad(-2.5 - slow_drift * 0.35))
+	)
+
+
+func _set_pose_rotation(skeleton: Skeleton3D, bone_index: int, rotation: Quaternion) -> void:
+	if bone_index < 0:
+		return
+	skeleton.set_bone_pose_rotation(bone_index, rotation)
