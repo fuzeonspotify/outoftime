@@ -88,13 +88,13 @@ func _normalize_roadblock(anchor: Node3D, model: Node3D) -> void:
 		push_error("REQUIRED ROADBLOCK MODEL ERROR: the installed scene has no measurable mesh bounds.")
 		return
 
-	var bounds: AABB = bounds_result.get("bounds", AABB()) as AABB
+	var bounds: AABB = bounds_result.get("bounds", AABB())
 	# The row must run across the road on X. Rotate scans authored lengthwise on Z.
 	if bounds.size.z > bounds.size.x:
 		model.rotation_degrees.y = 90.0
 		bounds_result = _calculate_bounds(anchor, model)
 		if bool(bounds_result.get("valid", false)):
-			bounds = bounds_result.get("bounds", bounds) as AABB
+			bounds = bounds_result.get("bounds", bounds)
 
 	var horizontal_length: float = maxf(bounds.size.x, bounds.size.z)
 	if horizontal_length <= 0.001 or bounds.size.y <= 0.001:
