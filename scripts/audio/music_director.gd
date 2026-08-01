@@ -149,11 +149,17 @@ func stop_music(fade_seconds: float = DEFAULT_STOP_FADE_SECONDS) -> void:
 
 func duck_for_dialogue(enabled: bool) -> void:
 	_dialogue_ducked = enabled
-	var target_volume: float = MUSIC_VOLUME_LINEAR * (0.42 if enabled else 1.0)
-	var tween: Tween = create_tween().set_parallel(true)
+	var playing_players: Array[AudioStreamPlayer] = []
 	for player: AudioStreamPlayer in _players:
 		if player.playing:
-			tween.tween_property(player, "volume_linear", target_volume, DIALOGUE_DUCK_SECONDS)
+			playing_players.append(player)
+	if playing_players.is_empty():
+		return
+
+	var target_volume: float = MUSIC_VOLUME_LINEAR * (0.42 if enabled else 1.0)
+	var tween: Tween = create_tween().set_parallel(true)
+	for player: AudioStreamPlayer in playing_players:
+		tween.tween_property(player, "volume_linear", target_volume, DIALOGUE_DUCK_SECONDS)
 
 
 func get_cue(cue_id: String) -> Dictionary:
