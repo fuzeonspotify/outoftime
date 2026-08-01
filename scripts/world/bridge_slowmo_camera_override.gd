@@ -45,17 +45,31 @@ func _play_center_closeups() -> void:
 		return
 	_sequence_running = true
 	_begin_close_camera()
-	var target: Vector3 = _crash_set.to_global(Vector3(0.0, 0.86, 0.0))
-	_place_camera(target + Vector3(-4.2, 1.25, 3.35), target, 46.0)
-	await _wait_real(CENTER_ANGLE_ONE_SECONDS)
+
+	var impact_target: Vector3 = _crash_set.to_global(Vector3(0.0, 0.86, 0.0))
 	_place_camera(
-		target + Vector3(3.45, 1.55, -2.55),
-		target + Vector3(0.0, 0.30, -0.4),
+		impact_target + Vector3(-4.2, 1.25, 3.35),
+		impact_target,
+		46.0
+	)
+	await _wait_real(CENTER_ANGLE_ONE_SECONDS)
+
+	var moving_target: Vector3 = _get_live_car_target(impact_target)
+	_place_camera(
+		moving_target + Vector3(3.45, 1.55, -2.55),
+		moving_target + Vector3(0.0, 0.20, -0.25),
 		42.0
 	)
 	await _wait_real(CENTER_ANGLE_TWO_SECONDS)
-	_place_camera(target + Vector3(-0.55, 5.05, 1.35), target, 50.0)
+
+	moving_target = _get_live_car_target(moving_target)
+	_place_camera(
+		moving_target + Vector3(-0.55, 5.05, 1.35),
+		moving_target,
+		50.0
+	)
 	await _wait_real(CENTER_ANGLE_THREE_SECONDS)
+
 	_end_close_camera()
 	_sequence_running = false
 
@@ -81,6 +95,15 @@ func _play_rail_closeups() -> void:
 	await _wait_real(0.44)
 	_end_close_camera()
 	_sequence_running = false
+
+
+func _get_live_car_target(fallback: Vector3) -> Vector3:
+	if _road == null:
+		return fallback
+	var car: Node3D = _road.get("_car") as Node3D
+	if car == null or not is_instance_valid(car):
+		return fallback
+	return car.global_position + Vector3.UP * 0.64
 
 
 func _find_crash_set() -> Node3D:
