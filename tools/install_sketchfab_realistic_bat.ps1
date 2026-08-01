@@ -6,7 +6,7 @@ $ErrorActionPreference = "Stop"
 
 $ModelUid = "f72642a034744cf5966f29a85eba4d05"
 $ModelName = "Bat Animation Fly"
-$MaxArchiveBytes = 50MB
+$MaxModelBytes = 50MB
 $Destination = Join-Path $ProjectRoot "assets\models\animals\realistic_bat"
 $AttributionPath = "assets/models/animals/REALISTIC_BAT_ATTRIBUTION.md"
 $DownloadEndpoint = "https://api.sketchfab.com/v3/models/$ModelUid/download"
@@ -62,7 +62,7 @@ if ($null -eq $DownloadInfo.gltf -or [string]::IsNullOrWhiteSpace($DownloadInfo.
 
 if ($null -ne $DownloadInfo.gltf.size) {
     $ReportedSize = [int64]$DownloadInfo.gltf.size
-    if ($ReportedSize -gt $MaxArchiveBytes) {
+    if ($ReportedSize -gt $MaxModelBytes) {
         throw "The reported glTF archive is $([math]::Round($ReportedSize / 1MB, 2)) MB, exceeding the project's 50 MB per-model limit."
     }
 }
@@ -80,7 +80,7 @@ try {
     if ($ActualArchiveBytes -le 0) {
         throw "The downloaded archive is empty."
     }
-    if ($ActualArchiveBytes -gt $MaxArchiveBytes) {
+    if ($ActualArchiveBytes -gt $MaxModelBytes) {
         throw "The downloaded archive is $([math]::Round($ActualArchiveBytes / 1MB, 2)) MB, exceeding the 50 MB limit."
     }
 
@@ -96,6 +96,16 @@ try {
         throw "The Sketchfab archive contains no glTF scene file."
     }
 
+    $SourceRoot = $SceneFile.Directory.FullName
+    $BundleFiles = Get-ChildItem -Path $SourceRoot -Recurse -File
+    $BundleBytes = [int64](($BundleFiles | Measure-Object -Property Length -Sum).Sum)
+    if ($BundleBytes -le 0) {
+        throw "The extracted bat bundle is empty."
+    }
+    if ($BundleBytes -gt $MaxModelBytes) {
+        throw "The complete extracted bat bundle is $([math]::Round($BundleBytes / 1MB, 2)) MB, exceeding the project's 50 MB per-model limit."
+    }
+
     $SceneJson = Get-Content -Raw -Path $SceneFile.FullName | ConvertFrom-Json
     if ($null -eq $SceneJson.meshes -or $SceneJson.meshes.Count -eq 0) {
         throw "The downloaded scene contains no mesh."
@@ -104,7 +114,6 @@ try {
         throw "The downloaded bat contains no authored animation. Installation was stopped."
     }
 
-    $SourceRoot = $SceneFile.Directory.FullName
     $BinaryFiles = Get-ChildItem -Path $SourceRoot -Recurse -File -Filter "*.bin"
     if ($BinaryFiles.Count -eq 0) {
         throw "The downloaded scene contains no binary geometry/animation buffer."
@@ -130,6 +139,10 @@ try {
     $InstalledJson = Get-Content -Raw -Path $InstalledScene | ConvertFrom-Json
     $InstalledTextures = Get-ChildItem -Path $Destination -Recurse -File |
         Where-Object { $_.Extension -match '^\.(png|jpg|jpeg|webp|ktx2)$' }
+    $InstalledBytes = [int64](((Get-ChildItem -Path $Destination -Recurse -File | Measure-Object -Property Length -Sum).Sum))
+    if ($InstalledBytes -gt $MaxModelBytes) {
+        throw "Installed bundle size verification failed."
+    }
     if ($null -eq $InstalledJson.animations -or $InstalledJson.animations.Count -eq 0) {
         throw "Animation verification failed after installation."
     }
@@ -137,7 +150,7 @@ try {
         throw "Texture verification failed after installation."
     }
 
-    Write-Host "Installed the exact bat model with $($InstalledJson.animations.Count) animation(s) and $($InstalledTextures.Count) texture file(s)." -ForegroundColor Green
+    Write-Host "Installed the exact $([math]::Round($InstalledBytes / 1MB, 2)) MB bat bundle with $($InstalledJson.animations.Count) animation(s) and $($InstalledTextures.Count) texture file(s)." -ForegroundColor Green
 
     $GodotCache = Join-Path $ProjectRoot ".godot"
     if (Test-Path $GodotCache) {
