@@ -184,6 +184,7 @@ func _spawn_rigid_piece(
 	var body: RigidBody3D = RigidBody3D.new()
 	body.name = piece_name
 	body.mass = body_mass
+	body.freeze = false
 	body.gravity_scale = 1.35
 	body.can_sleep = false
 	body.sleeping = false
@@ -233,6 +234,7 @@ func _launch_body_after_physics_frame(
 	await get_tree().physics_frame
 	if body == null or not is_instance_valid(body):
 		return
+	body.freeze = false
 	body.sleeping = false
 	body.linear_velocity = global_velocity
 	body.angular_velocity = angular_velocity
@@ -264,6 +266,7 @@ func _reinforce_launched_bodies(delta: float) -> void:
 		var angular: Vector3 = record.get("angular", Vector3.ZERO)
 
 		if age < 0.45:
+			body.freeze = false
 			body.sleeping = false
 			body.apply_central_force(velocity * body.mass * 3.4)
 
@@ -273,6 +276,7 @@ func _reinforce_launched_bodies(delta: float) -> void:
 				var retry_count: int = int(record.get("retry_count", 0)) + 1
 				record["retry_count"] = retry_count
 				var boosted_velocity: Vector3 = velocity * (1.7 + float(retry_count) * 0.55)
+				body.freeze = false
 				body.sleeping = false
 				body.linear_velocity = boosted_velocity
 				body.angular_velocity = angular * 1.4
@@ -397,12 +401,12 @@ func _spawn_fragment_burst(origin: Vector3, count: int, base_color: Color) -> vo
 func _spawn_impact_flash(origin: Vector3, flash_color: Color) -> void:
 	var flash: OmniLight3D = OmniLight3D.new()
 	flash.name = "PhysicalWreckFlash"
-	flash.position = _crash_set.to_global(origin)
 	flash.light_color = flash_color
 	flash.light_energy = 16.0
 	flash.omni_range = 18.0
 	flash.light_volumetric_fog_energy = 0.0
 	_road.add_child(flash)
+	flash.global_position = _crash_set.to_global(origin)
 	var tween: Tween = create_tween()
 	tween.tween_property(flash, "light_energy", 0.0, 0.34).set_trans(Tween.TRANS_EXPO)
 	tween.tween_callback(Callable(flash, "queue_free"))
