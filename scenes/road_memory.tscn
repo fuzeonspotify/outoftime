@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/road_memory_exact_car.gd" id="1_road"]
 [ext_resource type="Script" path="res://scripts/world/road_audio.gd" id="2_audio"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" path="res://scripts/models/realistic_environment_replacements_release.gd" id="9_exact_environment"]
 [ext_resource type="Script" path="res://scripts/world/level_expansion_release.gd" id="10_expansion"]
 [ext_resource type="Script" path="res://scripts/world/bridge_crash_physics_director.gd" id="11_physics"]
+[ext_resource type="Script" path="res://scripts/world/bridge_final_edge_rail_physics.gd" id="12_final_edge"]
 
 [node name="RoadMemory" type="Node3D"]
 script = ExtResource("1_road")
@@ -28,3 +29,6 @@ script = ExtResource("10_expansion")
 
 [node name="BridgeCrashPhysicsDirector" type="Node" parent="."]
 script = ExtResource("11_physics")
+
+[node name="BridgeFinalEdgeRailPhysics" type="Node" parent="."]
+script = ExtResource("12_final_edge")
