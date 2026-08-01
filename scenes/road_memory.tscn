@@ -1,10 +1,11 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/road_memory_exact_car.gd" id="1_road"]
 [ext_resource type="Script" path="res://scripts/world/road_audio.gd" id="2_audio"]
 [ext_resource type="Script" path="res://scripts/world/road_release_polish.gd" id="7_release"]
 [ext_resource type="Script" path="res://scripts/ui/scene_ui_polish.gd" id="8_ui"]
 [ext_resource type="Script" path="res://scripts/models/realistic_environment_replacements_release.gd" id="9_exact_environment"]
+[ext_resource type="Script" path="res://scripts/world/level_expansion_release.gd" id="10_expansion"]
 
 [node name="RoadMemory" type="Node3D"]
 script = ExtResource("1_road")
@@ -20,3 +21,6 @@ script = ExtResource("8_ui")
 
 [node name="ExactEnvironmentReplacements" type="Node" parent="."]
 script = ExtResource("9_exact_environment")
+
+[node name="LevelExpansion" type="Node" parent="."]
+script = ExtResource("10_expansion")
