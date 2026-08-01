@@ -1,0 +1,8 @@
+Model Information:
+* title:	concrete roadblock scan
+* source:	https://sketchfab.com/3d-models/concrete-roadblock-scan-f0dac55ac873433cbbfa3a42b6e0c622
+* author:	JabRomich (https://sketchfab.com/JabRomich)
+
+Model License:
+* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
+* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works
