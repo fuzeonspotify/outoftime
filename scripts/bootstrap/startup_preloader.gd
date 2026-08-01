@@ -3,7 +3,7 @@ extends Node
 signal progress_changed(progress: float, status: String)
 signal preload_completed(used_fallbacks: bool)
 
-const ENVIRONMENT_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/polyhaven_environment_library_release.gd")
+const ENVIRONMENT_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/polyhaven_environment_library_expanded.gd")
 const CAR_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/custom_porsche_car_library.gd")
 const CHARACTER_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/realistic_character_library.gd")
 
@@ -193,14 +193,14 @@ func _prepare_car_asset() -> bool:
 
 
 func _prepare_environment_assets() -> bool:
-	_update_progress(0.45, "DOWNLOADING EXACT POLY HAVEN ENVIRONMENTS")
+	_update_progress(0.45, "DOWNLOADING EXPANDED POLY HAVEN ENVIRONMENTS")
 	if _environment_library == null or not _environment_library.has_method("prepare"):
 		return false
 	var prepared_variant: Variant = await _environment_library.call("prepare")
 	var prepared: bool = bool(prepared_variant)
 	_update_progress(
 		0.98,
-		"EXACT ENVIRONMENT MODELS READY" if prepared else "REQUIRED ENVIRONMENT ASSET FAILED"
+		"EXPANDED ENVIRONMENT MODELS READY" if prepared else "REQUIRED ENVIRONMENT ASSET FAILED"
 	)
 	await get_tree().process_frame
 	return prepared
