@@ -102,6 +102,7 @@ func _play_crash_sequence(failed: bool) -> void:
 	_flash_crash(Color(1.0, 0.38, 0.55, 0.82), 0.92)
 	_trigger_center_physics_now()
 	_break_centered_roadblock(crash_set)
+	_start_center_impact_car_motion(impact_position)
 	await _play_center_impact_slow_motion(crash_set)
 	await get_tree().create_timer(0.22).timeout
 
@@ -132,38 +133,21 @@ func _play_crash_sequence(failed: bool) -> void:
 	await get_tree().create_timer(RAIL_SLIDE_SECONDS_FINAL * 0.72).timeout
 	_trigger_rail_physics_now()
 	_break_right_guardrail(crash_set)
+	var physical_car: RigidBody3D = _begin_final_car_physics(
+		crash_set,
+		rail_position,
+		rail_tween
+	)
 	await _play_rail_impact_slow_motion(crash_set)
-	await get_tree().create_timer(RAIL_SLIDE_SECONDS_FINAL * 0.28).timeout
+	if physical_car == null:
+		await get_tree().create_timer(RAIL_SLIDE_SECONDS_FINAL * 0.28).timeout
 
 	_crash_audio.call("play_major_impact")
 	_add_crash_shake(0.96)
 	_flash_crash(Color(1.0, 0.82, 0.94, 0.72), 0.86)
 	await get_tree().create_timer(0.90).timeout
 
-	_set_crash_caption("YOU HAVE DONE THIS BEFORE")
-	var fall_position: Vector3 = rail_position + Vector3(11.0, -30.0, -42.0)
-	var fall_tween: Tween = create_tween().set_parallel(true)
-	fall_tween.tween_property(
-		_car,
-		"position",
-		fall_position,
-		FALL_SECONDS_FINAL
-	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	fall_tween.tween_property(
-		_car,
-		"rotation_degrees",
-		Vector3(246.0, 352.0, 284.0),
-		FALL_SECONDS_FINAL
-	).set_trans(Tween.TRANS_QUAD)
-	fall_tween.tween_property(
-		_crash_rig,
-		"global_position",
-		rail_position + Vector3(-4.0, 18.0, 16.0),
-		FALL_SECONDS_FINAL * 0.76
-	).set_trans(Tween.TRANS_QUINT)
-	fall_tween.tween_property(_crash_camera, "fov", 90.0, FALL_SECONDS_FINAL * 0.84)
-	_crash_audio.call("start_tinnitus")
-	await get_tree().create_timer(FALL_SECONDS_FINAL).timeout
+	await _resolve_final_car_outcome(crash_set, rail_position, physical_car)
 
 	_crash_audio.call("play_heartbeat")
 	await get_tree().create_timer(0.85).timeout
@@ -233,6 +217,49 @@ func _trigger_rail_physics_now() -> void:
 	var final_edge_director: Node = get_node_or_null("BridgeFinalEdgeRailPhysics")
 	if final_edge_director != null and final_edge_director.has_method("_trigger_final_edge_rail"):
 		final_edge_director.call("_trigger_final_edge_rail")
+
+
+func _start_center_impact_car_motion(_impact_position: Vector3) -> void:
+	pass
+
+
+func _begin_final_car_physics(
+	_crash_set: Node3D,
+	_rail_position: Vector3,
+	_rail_tween: Tween
+) -> RigidBody3D:
+	return null
+
+
+func _resolve_final_car_outcome(
+	_crash_set: Node3D,
+	rail_position: Vector3,
+	_physical_car: RigidBody3D
+) -> void:
+	_set_crash_caption("YOU HAVE DONE THIS BEFORE")
+	var fall_position: Vector3 = rail_position + Vector3(11.0, -30.0, -42.0)
+	var fall_tween: Tween = create_tween().set_parallel(true)
+	fall_tween.tween_property(
+		_car,
+		"position",
+		fall_position,
+		FALL_SECONDS_FINAL
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	fall_tween.tween_property(
+		_car,
+		"rotation_degrees",
+		Vector3(246.0, 352.0, 284.0),
+		FALL_SECONDS_FINAL
+	).set_trans(Tween.TRANS_QUAD)
+	fall_tween.tween_property(
+		_crash_rig,
+		"global_position",
+		rail_position + Vector3(-4.0, 18.0, 16.0),
+		FALL_SECONDS_FINAL * 0.76
+	).set_trans(Tween.TRANS_QUINT)
+	fall_tween.tween_property(_crash_camera, "fov", 90.0, FALL_SECONDS_FINAL * 0.84)
+	_crash_audio.call("start_tinnitus")
+	await get_tree().create_timer(FALL_SECONDS_FINAL).timeout
 
 
 func _exit_tree() -> void:
