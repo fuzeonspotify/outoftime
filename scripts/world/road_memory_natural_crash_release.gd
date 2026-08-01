@@ -1,6 +1,8 @@
 extends "res://scripts/world/road_memory_physical_porsche_release.gd"
 
 const NATURAL_IMPACT_SPEED: float = 18.0
+const CRASH_MASS_MULTIPLIER: float = 0.5
+const CRASH_VELOCITY_MULTIPLIER: float = 2.5
 const NATURAL_RAIL_WAIT_SECONDS: float = 5.5
 const EDGE_RAIL_CONTACT_X: float = 4.72
 const RAIL_ZONE_MIN_Z: float = -24.0
@@ -158,7 +160,7 @@ func _begin_center_impact_physics() -> RigidBody3D:
 
 	var body: RigidBody3D = RigidBody3D.new()
 	body.name = "PhysicalPorscheWreck"
-	body.mass = PHYSICAL_CAR_MASS
+	body.mass = PHYSICAL_CAR_MASS * CRASH_MASS_MULTIPLIER
 	body.freeze = false
 	body.sleeping = false
 	body.can_sleep = true
@@ -188,11 +190,17 @@ func _begin_center_impact_physics() -> RigidBody3D:
 
 	# No lateral velocity or target point is supplied. The concrete pieces, deck,
 	# gravity, friction and subsequent contacts are the only sources of deviation.
-	var initial_velocity: Vector3 = forward_direction * NATURAL_IMPACT_SPEED
-	initial_velocity.y = -0.18
+	var initial_velocity: Vector3 = (
+		forward_direction
+		* NATURAL_IMPACT_SPEED
+		* CRASH_VELOCITY_MULTIPLIER
+	)
+	initial_velocity.y = -0.18 * CRASH_VELOCITY_MULTIPLIER
 	_launch_physical_porsche_after_frame(body, initial_velocity, Vector3.ZERO)
 	print(
-		"PORSCHE NATURAL PHYSICS HANDOFF: first barrier impact owns the trajectory with velocity ",
+		"PORSCHE NATURAL PHYSICS HANDOFF: mass ",
+		body.mass,
+		" and crash velocity ",
 		initial_velocity
 	)
 	return body
