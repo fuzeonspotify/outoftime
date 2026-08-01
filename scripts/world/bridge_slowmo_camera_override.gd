@@ -1,5 +1,9 @@
 extends Node
 
+const CENTER_ANGLE_ONE_SECONDS: float = 1.10
+const CENTER_ANGLE_TWO_SECONDS: float = 1.08
+const CENTER_ANGLE_THREE_SECONDS: float = 1.02
+
 var _road: Node3D
 var _physics_director: Node
 var _crash_set: Node3D
@@ -43,15 +47,15 @@ func _play_center_closeups() -> void:
 	_begin_close_camera()
 	var target: Vector3 = _crash_set.to_global(Vector3(0.0, 0.86, 0.0))
 	_place_camera(target + Vector3(-4.2, 1.25, 3.35), target, 46.0)
-	await _wait_real(0.52)
+	await _wait_real(CENTER_ANGLE_ONE_SECONDS)
 	_place_camera(
 		target + Vector3(3.45, 1.55, -2.55),
 		target + Vector3(0.0, 0.30, -0.4),
 		42.0
 	)
-	await _wait_real(0.50)
+	await _wait_real(CENTER_ANGLE_TWO_SECONDS)
 	_place_camera(target + Vector3(-0.55, 5.05, 1.35), target, 50.0)
-	await _wait_real(0.46)
+	await _wait_real(CENTER_ANGLE_THREE_SECONDS)
 	_end_close_camera()
 	_sequence_running = false
 
