@@ -6,6 +6,7 @@ signal preload_completed(used_fallbacks: bool)
 const ENVIRONMENT_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/polyhaven_environment_library_expanded.gd")
 const CAR_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/custom_porsche_car_library.gd")
 const CHARACTER_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/realistic_character_library.gd")
+const REQUIRED_BAT_SCENE_PATH: String = "res://assets/models/animals/realistic_bat/scene.gltf"
 
 const SCENE_PATHS: Array[String] = [
 	"res://scenes/cemetery.tscn",
@@ -198,12 +199,54 @@ func _prepare_environment_assets() -> bool:
 		return false
 	var prepared_variant: Variant = await _environment_library.call("prepare")
 	var prepared: bool = bool(prepared_variant)
+	if prepared:
+		_update_progress(0.96, "VERIFYING REQUIRED ANIMATED CEMETERY BAT")
+		prepared = _validate_required_bat()
 	_update_progress(
 		0.98,
 		"EXPANDED ENVIRONMENT MODELS READY" if prepared else "REQUIRED ENVIRONMENT ASSET FAILED"
 	)
 	await get_tree().process_frame
 	return prepared
+
+
+func _validate_required_bat() -> bool:
+	if not ResourceLoader.exists(REQUIRED_BAT_SCENE_PATH):
+		push_error(
+			"REQUIRED BAT MODEL ERROR: %s is missing. Run tools/install_sketchfab_realistic_bat.ps1. No substitute bat is allowed." % REQUIRED_BAT_SCENE_PATH
+		)
+		return false
+
+	var bat_scene: PackedScene = load(REQUIRED_BAT_SCENE_PATH) as PackedScene
+	if bat_scene == null:
+		push_error("REQUIRED BAT MODEL ERROR: the installed bat scene could not be loaded.")
+		return false
+	var bat_instance: Node3D = bat_scene.instantiate() as Node3D
+	if bat_instance == null:
+		push_error("REQUIRED BAT MODEL ERROR: the installed bat scene could not be instantiated.")
+		return false
+
+	var mesh_nodes: Array[Node] = bat_instance.find_children("*", "MeshInstance3D", true, false)
+	var animation_players: Array[Node] = bat_instance.find_children(
+		"*",
+		"AnimationPlayer",
+		true,
+		false
+	)
+	var has_animation: bool = false
+	for node: Node in animation_players:
+		var animation_player: AnimationPlayer = node as AnimationPlayer
+		if animation_player != null and not animation_player.get_animation_list().is_empty():
+			has_animation = true
+			break
+	bat_instance.free()
+
+	if mesh_nodes.is_empty() or not has_animation:
+		push_error(
+			"REQUIRED BAT MODEL ERROR: the bat must contain a complete mesh and authored flight animation."
+		)
+		return false
+	return true
 
 
 func _update_progress(progress_value: float, status_text: String) -> void:
