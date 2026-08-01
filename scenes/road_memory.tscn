@@ -1,6 +1,6 @@
 [gd_scene load_steps=14 format=3]
 
-[ext_resource type="Script" path="res://scripts/world/road_memory_physical_porsche_release.gd" id="1_road"]
+[ext_resource type="Script" path="res://scripts/world/road_memory_natural_crash_release.gd" id="1_road"]
 [ext_resource type="Script" path="res://scripts/world/road_audio.gd" id="2_audio"]
 [ext_resource type="Script" path="res://scripts/world/road_release_polish.gd" id="7_release"]
 [ext_resource type="Script" path="res://scripts/ui/scene_ui_polish.gd" id="8_ui"]
@@ -12,7 +12,7 @@
 [ext_resource type="Script" path="res://scripts/world/porsche_wheel_spin_release.gd" id="14_wheels"]
 [ext_resource type="Script" path="res://scripts/world/bridge_slowmo_camera_override.gd" id="15_slowmo_camera"]
 [ext_resource type="Script" path="res://scripts/world/realistic_car_audio.gd" id="16_car_audio"]
-[ext_resource type="Script" path="res://scripts/world/bridge_realistic_ocean.gd" id="17_ocean"]
+[ext_resource type="Script" path="res://scripts/world/bridge_realistic_ocean_release.gd" id="17_ocean"]
 
 [node name="RoadMemory" type="Node3D"]
 script = ExtResource("1_road")
