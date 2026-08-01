@@ -110,7 +110,7 @@ func _try_initialize() -> void:
 
 	_last_car_position = _car.global_position
 	_initialized = true
-	var resolved_names: Array[String] = []
+	var resolved_names: PackedStringArray = PackedStringArray()
 	for record: Dictionary in _wheel_records:
 		var wheel_node: Node3D = record.get("node") as Node3D
 		if wheel_node != null:
