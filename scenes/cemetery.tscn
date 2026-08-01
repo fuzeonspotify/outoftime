@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=12 format=3]
 
 [ext_resource type="Script" path="res://scripts/world/cemetery.gd" id="1_cemetery"]
 [ext_resource type="Script" path="res://scripts/world/cemetery_memorial_alignment.gd" id="2_memorial"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/models/realistic_environment_replacements_release.gd" id="14_exact_environment"]
 [ext_resource type="Script" path="res://scripts/world/level_expansion_release.gd" id="15_expansion"]
 [ext_resource type="Script" path="res://scripts/world/cemetery_eerie_bats_release.gd" id="16_eerie_bats"]
+[ext_resource type="Script" path="res://scripts/world/cemetery_volumetric_release.gd" id="17_volumetric"]
 
 [node name="Cemetery" type="Node3D"]
 script = ExtResource("1_cemetery")
@@ -40,3 +41,6 @@ script = ExtResource("15_expansion")
 
 [node name="CemeteryEerieBats" type="Node" parent="."]
 script = ExtResource("16_eerie_bats")
+
+[node name="CemeteryVolumetricFog" type="Node" parent="."]
+script = ExtResource("17_volumetric")
