@@ -2,7 +2,7 @@ extends "res://scripts/world/road_memory_physical_porsche_release.gd"
 
 const NATURAL_IMPACT_SPEED: float = 18.0
 const NATURAL_RAIL_WAIT_SECONDS: float = 5.5
-const RIGHT_RAIL_CONTACT_X: float = 4.72
+const EDGE_RAIL_CONTACT_X: float = 4.72
 const RAIL_ZONE_MIN_Z: float = -24.0
 const RAIL_ZONE_MAX_Z: float = -7.0
 
@@ -102,17 +102,16 @@ func _play_crash_sequence(failed: bool) -> void:
 	await _play_center_impact_slow_motion(crash_set)
 	await get_tree().create_timer(0.22).timeout
 
-	var reached_right_rail: bool = await _wait_for_natural_right_rail_contact(
+	var edge_side: float = await _wait_for_natural_edge_contact(
 		crash_set,
 		physical_car,
 		NATURAL_RAIL_WAIT_SECONDS
 	)
-	if reached_right_rail:
+	if not is_zero_approx(edge_side):
 		_crash_audio.call("play_guardrail_hit", 0.94)
 		_set_crash_caption("THE WRECK FINDS THE EDGE")
-		_trigger_rail_physics_now()
-		_break_right_guardrail(crash_set)
-		await _play_rail_impact_slow_motion(crash_set)
+		_trigger_natural_edge_physics(crash_set, edge_side)
+		await _play_natural_edge_slow_motion(crash_set, edge_side)
 		_crash_audio.call("play_major_impact")
 		_add_crash_shake(0.96)
 		_flash_crash(Color(1.0, 0.82, 0.94, 0.72), 0.86)
@@ -199,20 +198,20 @@ func _begin_center_impact_physics() -> RigidBody3D:
 	return body
 
 
-func _wait_for_natural_right_rail_contact(
+func _wait_for_natural_edge_contact(
 	crash_set: Node3D,
 	body: RigidBody3D,
 	maximum_seconds: float
-) -> bool:
+) -> float:
 	if body == null or not is_instance_valid(body):
-		return false
+		return 0.0
 
 	var elapsed: float = 0.0
 	var slow_duration: float = 0.0
 	while elapsed < maximum_seconds:
 		await get_tree().physics_frame
 		if body == null or not is_instance_valid(body):
-			return false
+			return 0.0
 
 		var delta: float = get_physics_process_delta_time()
 		elapsed += delta
@@ -220,27 +219,72 @@ func _wait_for_natural_right_rail_contact(
 		var local_position: Vector3 = crash_set.to_local(body.global_position)
 
 		var reached_contact_line: bool = (
-			local_position.x >= RIGHT_RAIL_CONTACT_X
+			absf(local_position.x) >= EDGE_RAIL_CONTACT_X
 			and local_position.z >= RAIL_ZONE_MIN_Z
 			and local_position.z <= RAIL_ZONE_MAX_Z
 			and body.global_position.y > crash_set.global_position.y - 1.5
 		)
 		if reached_contact_line:
-			print("PORSCHE NATURAL RAIL CONTACT: ", local_position)
-			return true
+			var side: float = signf(local_position.x)
+			print("PORSCHE NATURAL EDGE CONTACT: side ", side, " at ", local_position)
+			return side
 
 		if body.global_position.y < crash_set.global_position.y - 3.0:
-			return false
+			return 0.0
 		if local_position.z < -41.0:
-			return false
+			return 0.0
 
 		if body.linear_velocity.length() < 0.85 and body.angular_velocity.length() < 0.65:
 			slow_duration += delta
 			if slow_duration >= 0.85:
-				return false
+				return 0.0
 		else:
 			slow_duration = 0.0
-	return false
+	return 0.0
+
+
+func _trigger_natural_edge_physics(crash_set: Node3D, side: float) -> void:
+	if side > 0.0:
+		_trigger_rail_physics_now()
+		_break_right_guardrail(crash_set)
+		return
+
+	var mesh_nodes: Array[Node] = crash_set.find_children(
+		"*",
+		"MeshInstance3D",
+		true,
+		false
+	)
+	for node: Node in mesh_nodes:
+		var rail: MeshInstance3D = node as MeshInstance3D
+		if rail == null:
+			continue
+		if bool(rail.get_meta("crash_rail", false)) and rail.position.x < 0.0:
+			rail.visible = false
+
+	var edge_director: Node = get_node_or_null("BridgeFinalEdgeRailPhysics")
+	if edge_director != null and edge_director.has_method("trigger_edge_for_side"):
+		edge_director.call("trigger_edge_for_side", -1.0)
+
+
+func _play_natural_edge_slow_motion(crash_set: Node3D, side: float) -> void:
+	if side > 0.0:
+		await _play_rail_impact_slow_motion(crash_set)
+		return
+
+	Engine.time_scale = RAIL_IMPACT_TIME_SCALE
+	var target: Vector3 = crash_set.to_global(Vector3(-5.95, 0.78, -14.5))
+	_place_close_crash_camera(target + Vector3(-2.9, 0.95, 2.55), target, 43.0)
+	await _wait_real_time(0.48)
+	_place_close_crash_camera(
+		target + Vector3(2.75, 1.30, -1.45),
+		target + Vector3(-0.5, 0.15, 0.0),
+		39.0
+	)
+	await _wait_real_time(0.50)
+	_place_close_crash_camera(target + Vector3(-1.0, 4.65, 3.0), target, 48.0)
+	await _wait_real_time(0.44)
+	Engine.time_scale = 1.0
 
 
 func _begin_final_car_physics(
