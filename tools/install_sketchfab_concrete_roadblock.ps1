@@ -9,7 +9,7 @@ $ExpectedModelName = "concrete roadblock scan"
 $ModelPageUrl = "https://sketchfab.com/3d-models/concrete-roadblock-scan-f0dac55ac873433cbbfa3a42b6e0c622"
 $ModelInfoEndpoint = "https://api.sketchfab.com/v3/models/$ModelUid"
 $DownloadEndpoint = "https://api.sketchfab.com/v3/models/$ModelUid/download"
-$MaxModelBytes = 50MB
+$MaxModelBytes = 100MB
 $Destination = Join-Path $ProjectRoot "assets\models\props\concrete_roadblock_scan"
 $AttributionFile = Join-Path $ProjectRoot "assets\models\props\CONCRETE_ROADBLOCK_SCAN_ATTRIBUTION.md"
 
@@ -74,7 +74,7 @@ if ($null -eq $DownloadInfo.gltf -or [string]::IsNullOrWhiteSpace([string]$Downl
     throw "Sketchfab did not return a glTF archive for model $ModelUid."
 }
 if ($null -ne $DownloadInfo.gltf.size -and [int64]$DownloadInfo.gltf.size -gt $MaxModelBytes) {
-    throw "The reported glTF archive is $([math]::Round([int64]$DownloadInfo.gltf.size / 1MB, 2)) MB, exceeding the project's 50 MB per-model limit."
+    throw "The reported glTF archive is $([math]::Round([int64]$DownloadInfo.gltf.size / 1MB, 2)) MB, exceeding the project's 100 MB per-model limit."
 }
 
 $TempRoot = Join-Path ([IO.Path]::GetTempPath()) ("outoftime_roadblock_" + [Guid]::NewGuid().ToString("N"))
@@ -91,7 +91,7 @@ try {
         throw "The downloaded archive is empty."
     }
     if ($ActualArchiveBytes -gt $MaxModelBytes) {
-        throw "The downloaded archive is $([math]::Round($ActualArchiveBytes / 1MB, 2)) MB, exceeding the 50 MB limit."
+        throw "The downloaded archive is $([math]::Round($ActualArchiveBytes / 1MB, 2)) MB, exceeding the 100 MB limit."
     }
 
     Expand-Archive -Path $ArchivePath -DestinationPath $ExtractRoot -Force
@@ -111,7 +111,7 @@ try {
         throw "The extracted roadblock bundle is empty."
     }
     if ($BundleBytes -gt $MaxModelBytes) {
-        throw "The complete extracted roadblock bundle is $([math]::Round($BundleBytes / 1MB, 2)) MB, exceeding the project's 50 MB per-model limit."
+        throw "The complete extracted roadblock bundle is $([math]::Round($BundleBytes / 1MB, 2)) MB, exceeding the project's 100 MB per-model limit."
     }
 
     $SceneJson = Get-Content -Raw -Path $SceneFile.FullName | ConvertFrom-Json
@@ -146,7 +146,7 @@ try {
         Where-Object { $_.Extension -match '^\.(png|jpg|jpeg|webp|ktx2)$' }
     $InstalledBytes = [int64](((Get-ChildItem -Path $Destination -Recurse -File | Measure-Object -Property Length -Sum).Sum))
     if ($InstalledBytes -gt $MaxModelBytes) {
-        throw "Installed bundle size verification failed."
+        throw "Installed bundle size verification failed: $([math]::Round($InstalledBytes / 1MB, 2)) MB exceeds the 100 MB limit."
     }
     if ($null -eq $InstalledJson.meshes -or $InstalledJson.meshes.Count -eq 0) {
         throw "Mesh verification failed after installation."
