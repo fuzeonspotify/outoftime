@@ -8,9 +8,12 @@ const BRAKE_SECONDS: float = 2.20
 const IMPACT_HOLD_SECONDS: float = 1.20
 const RAIL_SLIDE_SECONDS_FINAL: float = 3.60
 const FALL_SECONDS_FINAL: float = 5.40
+const CENTER_IMPACT_TIME_SCALE: float = 0.24
+const RAIL_IMPACT_TIME_SCALE: float = 0.30
 
 
 func _play_crash_sequence(failed: bool) -> void:
+	Engine.time_scale = 1.0
 	MusicDirector.stop_music(11.0)
 	SFXDirector.stop_environment(5.0)
 	_distance_label.text = "BRIDGE SIGNAL  LOST"
@@ -97,8 +100,10 @@ func _play_crash_sequence(failed: bool) -> void:
 	_crash_audio.call("play_glass_burst")
 	_add_crash_shake(1.0)
 	_flash_crash(Color(1.0, 0.38, 0.55, 0.82), 0.92)
+	_trigger_center_physics_now()
 	_break_centered_roadblock(crash_set)
-	await get_tree().create_timer(IMPACT_HOLD_SECONDS).timeout
+	await _play_center_impact_slow_motion(crash_set)
+	await get_tree().create_timer(0.22).timeout
 
 	_crash_audio.call("play_guardrail_hit", 0.94)
 	_set_crash_caption("THE IMPACT THROWS YOU SIDEWAYS")
@@ -125,7 +130,9 @@ func _play_crash_sequence(failed: bool) -> void:
 		RAIL_SLIDE_SECONDS_FINAL
 	).set_trans(Tween.TRANS_QUINT)
 	await get_tree().create_timer(RAIL_SLIDE_SECONDS_FINAL * 0.72).timeout
+	_trigger_rail_physics_now()
 	_break_right_guardrail(crash_set)
+	await _play_rail_impact_slow_motion(crash_set)
 	await get_tree().create_timer(RAIL_SLIDE_SECONDS_FINAL * 0.28).timeout
 
 	_crash_audio.call("play_major_impact")
@@ -165,11 +172,71 @@ func _play_crash_sequence(failed: bool) -> void:
 	await whiteout_tween.finished
 	_crash_audio.call("stop_all", 1.6)
 	await get_tree().create_timer(0.70).timeout
+	Engine.time_scale = 1.0
 	var heaven_scene: PackedScene = StartupPreloader.get_preloaded_scene(CITY_SCENE_PATH)
 	if heaven_scene != null:
 		get_tree().change_scene_to_packed(heaven_scene)
 	else:
 		get_tree().change_scene_to_file(CITY_SCENE_PATH)
+
+
+func _play_center_impact_slow_motion(crash_set: Node3D) -> void:
+	Engine.time_scale = CENTER_IMPACT_TIME_SCALE
+	var target: Vector3 = crash_set.to_global(Vector3(0.0, 0.86, 0.0))
+	_place_close_crash_camera(target + Vector3(-4.2, 1.25, 3.35), target, 46.0)
+	await _wait_real_time(0.52)
+	_place_close_crash_camera(target + Vector3(3.45, 1.55, -2.55), target + Vector3(0.0, 0.30, -0.4), 42.0)
+	await _wait_real_time(0.50)
+	_place_close_crash_camera(target + Vector3(-0.55, 5.05, 1.35), target, 50.0)
+	await _wait_real_time(0.46)
+	Engine.time_scale = 1.0
+
+
+func _play_rail_impact_slow_motion(crash_set: Node3D) -> void:
+	Engine.time_scale = RAIL_IMPACT_TIME_SCALE
+	var target: Vector3 = crash_set.to_global(Vector3(5.95, 0.78, -14.5))
+	_place_close_crash_camera(target + Vector3(2.9, 0.95, 2.55), target, 43.0)
+	await _wait_real_time(0.48)
+	_place_close_crash_camera(target + Vector3(-2.75, 1.30, -1.45), target + Vector3(0.5, 0.15, 0.0), 39.0)
+	await _wait_real_time(0.50)
+	_place_close_crash_camera(target + Vector3(1.0, 4.65, 3.0), target, 48.0)
+	await _wait_real_time(0.44)
+	Engine.time_scale = 1.0
+
+
+func _wait_real_time(seconds: float) -> void:
+	await get_tree().create_timer(seconds, true, false, true).timeout
+
+
+func _place_close_crash_camera(
+	camera_position: Vector3,
+	target_position: Vector3,
+	field_of_view: float
+) -> void:
+	if _crash_rig == null or _crash_camera == null:
+		return
+	_crash_rig.global_position = camera_position
+	_crash_rig.look_at(target_position, Vector3.UP)
+	_crash_camera.fov = field_of_view
+
+
+func _trigger_center_physics_now() -> void:
+	var physics_director: Node = get_node_or_null("BridgeCrashPhysicsDirector")
+	if physics_director != null and physics_director.has_method("_trigger_center_impact"):
+		physics_director.call("_trigger_center_impact")
+
+
+func _trigger_rail_physics_now() -> void:
+	var physics_director: Node = get_node_or_null("BridgeCrashPhysicsDirector")
+	if physics_director != null and physics_director.has_method("_trigger_right_rail_impact"):
+		physics_director.call("_trigger_right_rail_impact")
+	var final_edge_director: Node = get_node_or_null("BridgeFinalEdgeRailPhysics")
+	if final_edge_director != null and final_edge_director.has_method("_trigger_final_edge_rail"):
+		final_edge_director.call("_trigger_final_edge_rail")
+
+
+func _exit_tree() -> void:
+	Engine.time_scale = 1.0
 
 
 func _build_crash_set() -> Node3D:
