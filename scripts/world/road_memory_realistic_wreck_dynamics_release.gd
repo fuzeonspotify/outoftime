@@ -29,6 +29,7 @@ var _previous_lateral_speed: float = 0.0
 var _impact_response_cooldown: float = 0.0
 var _impact_asymmetry: float = 0.0
 var _wreck_state: String = ""
+var _dynamics_initialized: bool = false
 
 
 func _begin_center_impact_physics() -> RigidBody3D:
@@ -40,8 +41,6 @@ func _begin_center_impact_physics() -> RigidBody3D:
 	body.linear_damp = 0.014
 	body.angular_damp = 0.018
 	body.center_of_mass_mode = RigidBody3D.CENTER_OF_MASS_MODE_CUSTOM
-	# A Porsche remains low-slung, but the center is high enough for a wheel or
-	# rocker-panel catch to lever the half-mass wreck into a real rollover.
 	body.center_of_mass = Vector3(0.0, 0.31, 0.10)
 	body.max_contacts_reported = 48
 
@@ -55,30 +54,19 @@ func _begin_center_impact_physics() -> RigidBody3D:
 
 	var rng: RandomNumberGenerator = RandomNumberGenerator.new()
 	rng.randomize()
-	# This does not add sideways velocity or a forced spin. It represents the
-	# small left/right imbalance found in a real imperfect barrier strike and is
-	# used only when an actual velocity-loss event creates rotational impulse.
+	# This never adds sideways translation. It only breaks impossible perfect
+	# symmetry when a real measured collision creates a rotational impulse.
 	_impact_asymmetry = rng.randf_range(-0.18, 0.18)
-	_previous_wreck_velocity = body.linear_velocity
+	_previous_wreck_velocity = Vector3.ZERO
 	_previous_lateral_speed = 0.0
 	_impact_response_cooldown = 0.0
+	_dynamics_initialized = false
 	set_physics_process(true)
 
-	_initialize_realistic_dynamics_after_launch(body)
 	print(
 		"PORSCHE REALISTIC WRECK DYNAMICS READY: tire slip, grip catch, pitch, yaw and rollover are physics-driven."
 	)
 	return body
-
-
-func _initialize_realistic_dynamics_after_launch(body: RigidBody3D) -> void:
-	await get_tree().physics_frame
-	await get_tree().physics_frame
-	if body == null or not is_instance_valid(body):
-		return
-	_previous_wreck_velocity = body.linear_velocity
-	var basis: Basis = body.global_basis.orthonormalized()
-	_previous_lateral_speed = body.linear_velocity.dot(basis.x.normalized())
 
 
 func _physics_process(delta: float) -> void:
@@ -88,7 +76,27 @@ func _physics_process(delta: float) -> void:
 		_set_wreck_state("IN WATER")
 		return
 
-	_update_realistic_wreck_dynamics(_realistic_wreck_body, maxf(delta, 0.0001))
+	# Wait until the parent release has assigned the 67.5 launch velocity. This
+	# prevents the launch itself from being mistaken for a collision delta-v.
+	if not _dynamics_initialized:
+		if _realistic_wreck_body.linear_velocity.length() < 10.0:
+			return
+		_previous_wreck_velocity = _realistic_wreck_body.linear_velocity
+		var launch_basis: Basis = _realistic_wreck_body.global_basis.orthonormalized()
+		_previous_lateral_speed = _realistic_wreck_body.linear_velocity.dot(
+			launch_basis.x.normalized()
+		)
+		_dynamics_initialized = true
+		print(
+			"PORSCHE REALISTIC WRECK DYNAMICS ACTIVE at velocity ",
+			_previous_wreck_velocity
+		)
+		return
+
+	_update_realistic_wreck_dynamics(
+		_realistic_wreck_body,
+		maxf(delta, 0.0001)
+	)
 
 
 func _update_realistic_wreck_dynamics(body: RigidBody3D, delta: float) -> void:
@@ -174,7 +182,7 @@ func _sample_tire_contacts(body: RigidBody3D, local_up: Vector3) -> Dictionary:
 	var accumulated_normal: Vector3 = Vector3.ZERO
 
 	for offset_variant: Variant in WHEEL_OFFSETS:
-		var wheel_offset: Vector3 = offset_variant as Vector3
+		var wheel_offset: Vector3 = offset_variant
 		var ray_from: Vector3 = body.to_global(
 			wheel_offset + Vector3.UP * SUSPENSION_RAY_START
 		)
@@ -190,7 +198,8 @@ func _sample_tire_contacts(body: RigidBody3D, local_up: Vector3) -> Dictionary:
 		if result.is_empty():
 			continue
 		contact_count += 1
-		accumulated_normal += result.get("normal", Vector3.UP) as Vector3
+		var hit_normal: Vector3 = result.get("normal", Vector3.UP)
+		accumulated_normal += hit_normal
 
 	var average_normal: Vector3 = Vector3.UP
 	if accumulated_normal.length_squared() > 0.0001:
@@ -208,8 +217,7 @@ func _apply_tire_contact_forces(
 	slip_angle: float,
 	contact_ratio: float
 ) -> void:
-	# The tire curve peaks at a small slip angle, then falls away as the wreck
-	# transitions into a skid. This allows both recovery and a realistic spin.
+	# Grip peaks at a small slip angle and then falls away into a skid.
 	var normalized_slip: float = slip_angle / 0.30
 	var grip_falloff: float = 1.0 / (1.0 + normalized_slip * normalized_slip)
 	var effective_friction: float = lerpf(
@@ -236,15 +244,12 @@ func _apply_tire_contact_forces(
 	)
 	body.apply_central_force(requested_lateral_force)
 
-	# Tire force acts at road height below the center of mass, producing natural
-	# load transfer and roll instead of simply deleting sideways velocity.
+	# Tire force occurs below the center of mass, creating load transfer and roll.
 	var lateral_force_scalar: float = requested_lateral_force.dot(right_axis)
 	body.apply_torque(
 		forward_axis * (-lateral_force_scalar * ROLL_FORCE_LEVER_ARM)
 	)
 
-	# Straight-line rolling resistance is small; it should not erase the 67.5
-	# crash velocity, only reduce it gradually when tires are still planted.
 	if planar_velocity.length_squared() > 0.01:
 		body.apply_central_force(
 			-planar_velocity.normalized()
@@ -254,8 +259,7 @@ func _apply_tire_contact_forces(
 			* contact_ratio
 		)
 
-	# Low-slip tires resist yaw. Once the car is broadside, this aligning torque
-	# weakens sharply and the chassis is free to spin.
+	# Low-slip tires resist yaw. Broadside tires lose this stabilizing effect.
 	var yaw_rate: float = body.angular_velocity.dot(Vector3.UP)
 	body.apply_torque(
 		-Vector3.UP
@@ -266,15 +270,17 @@ func _apply_tire_contact_forces(
 		* contact_ratio
 	)
 
-	# A small forward-direction correction lets a partially yawed car carve a
-	# curved path instead of sliding forever in one world-space direction.
+	# A partially yawed car can carve a curved path when its tires still grip.
 	if absf(forward_speed) > 1.0 and grip_falloff > 0.18:
 		var desired_forward_velocity: Vector3 = forward_axis * forward_speed
 		var direction_correction: Vector3 = (
 			desired_forward_velocity - planar_velocity
 		) * body.mass * 0.26 * grip_falloff * contact_ratio
 		body.apply_central_force(
-			_limit_vector_length(direction_correction, maximum_lateral_force * 0.32)
+			_limit_vector_length(
+				direction_correction,
+				maximum_lateral_force * 0.32
+			)
 		)
 
 
@@ -290,9 +296,7 @@ func _apply_grip_catch_rollover(
 	if previous_abs < 4.2 or lateral_speed_removed < 0.48:
 		return
 
-	# A broadside slide that suddenly regains tire or wheel-edge grip is one of
-	# the main real-world rollover mechanisms. The impulse scales with the actual
-	# lateral speed removed during this physics step.
+	# A broadside slide that suddenly regains wheel-edge or tire grip can roll.
 	var catch_strength: float = (
 		lateral_speed_removed
 		* previous_abs
@@ -334,9 +338,7 @@ func _apply_collision_rotation_response(
 	var lateral_loss: float = velocity_lost.dot(right_axis)
 	var vertical_loss: float = velocity_lost.dot(Vector3.UP)
 
-	# Longitudinal deceleration pitches the nose down. Lateral deceleration rolls
-	# and yaws the chassis. A tiny per-crash asymmetry only breaks impossible
-	# perfect symmetry; it never creates sideways translational velocity.
+	# Longitudinal loss pitches the nose; lateral loss rolls and yaws the car.
 	var pitch_impulse: Vector3 = (
 		-right_axis * longitudinal_loss * body.mass * 0.030
 	)
@@ -406,15 +408,10 @@ func _update_contact_material(
 
 	if tire_contact_count > 0 and uprightness > 0.24:
 		var slide_blend: float = clampf(slip_angle / 0.70, 0.0, 1.0)
-		_wreck_physics_material.friction = lerpf(
-			0.26,
-			0.42,
-			slide_blend
-		)
+		_wreck_physics_material.friction = lerpf(0.26, 0.42, slide_blend)
 		body.angular_damp = lerpf(0.055, 0.020, slide_blend)
 	elif body_contact_count > 0:
-		# Rocker panels, roof and bodywork scrape harder than rolling tires. This
-		# resistance can turn a fast side slide into a physically earned tumble.
+		# Roof, rocker-panel and side contact scrape harder than rolling tires.
 		_wreck_physics_material.friction = BODY_SLIDE_FRICTION
 		body.angular_damp = 0.070
 	else:
@@ -454,7 +451,7 @@ func _set_wreck_state(new_state: String) -> void:
 
 func _add_wheel_corner_collisions(body: RigidBody3D) -> void:
 	for wheel_index: int in range(WHEEL_OFFSETS.size()):
-		var wheel_offset: Vector3 = WHEEL_OFFSETS[wheel_index] as Vector3
+		var wheel_offset: Vector3 = WHEEL_OFFSETS[wheel_index]
 		var wheel_shape: SphereShape3D = SphereShape3D.new()
 		wheel_shape.radius = WHEEL_COLLISION_RADIUS
 		var wheel_collision: CollisionShape3D = CollisionShape3D.new()
