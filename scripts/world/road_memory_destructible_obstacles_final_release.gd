@@ -13,15 +13,15 @@ func _activate_obstacle_demolition(
 	if bool(obstacle_root.get_meta("demolition_activated", false)):
 		return
 
-	# Disable the dormant solid and sensor immediately. queue_free() occurs at the
-	# end of the frame, so clearing their layers now prevents the freshly spawned
-	# fragments from being held inside the original obstacle for one extra step.
+	# queue_free() occurs at the end of the frame. Disable collision using
+	# deferred property changes so this remains safe when called from an Area3D
+	# body_entered callback while Godot is flushing physics queries.
 	var dormant_body: StaticBody3D = obstacle_root.get_node_or_null(
 		"DormantCarOnlyObstacleBody"
 	) as StaticBody3D
 	if dormant_body != null:
-		dormant_body.collision_layer = 0
-		dormant_body.collision_mask = 0
+		dormant_body.set_deferred("collision_layer", 0)
+		dormant_body.set_deferred("collision_mask", 0)
 		var dormant_shapes: Array[Node] = dormant_body.find_children(
 			"*",
 			"CollisionShape3D",
@@ -37,8 +37,8 @@ func _activate_obstacle_demolition(
 		"PorscheOnlyDemolitionSensor"
 	) as Area3D
 	if activation_area != null:
-		activation_area.monitoring = false
-		activation_area.collision_mask = 0
+		activation_area.set_deferred("monitoring", false)
+		activation_area.set_deferred("collision_mask", 0)
 
 	super._activate_obstacle_demolition(
 		obstacle_root,
