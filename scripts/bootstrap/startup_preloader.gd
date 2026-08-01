@@ -7,6 +7,7 @@ const ENVIRONMENT_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/polyhav
 const CAR_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/custom_porsche_car_library.gd")
 const CHARACTER_LIBRARY_SCRIPT: Script = preload("res://scripts/assets/realistic_character_library.gd")
 const REQUIRED_BAT_SCENE_PATH: String = "res://assets/models/animals/realistic_bat/scene.gltf"
+const REQUIRED_ROADBLOCK_SCENE_PATH: String = "res://assets/models/props/concrete_roadblock_scan/scene.gltf"
 
 const SCENE_PATHS: Array[String] = [
 	"res://scenes/cemetery.tscn",
@@ -19,6 +20,7 @@ const SCENE_PATHS: Array[String] = [
 var _environment_library: Node
 var _car_library: Node
 var _character_library: Node
+var _roadblock_prototype: Node3D
 var _scene_cache: Dictionary = {}
 var _progress: float = 0.0
 var _status: String = "STARTING MEMORY ARCHIVE"
@@ -100,6 +102,12 @@ func get_ghost_woman_prototype() -> Node3D:
 	if _character_library == null:
 		return null
 	return _character_library.call("get_ghost_woman_prototype") as Node3D
+
+
+func get_roadblock_prototype() -> Node3D:
+	if _roadblock_prototype == null or not is_instance_valid(_roadblock_prototype):
+		return null
+	return _roadblock_prototype.duplicate() as Node3D
 
 
 func get_void_prototype(_model_path: String) -> Node3D:
@@ -200,8 +208,11 @@ func _prepare_environment_assets() -> bool:
 	var prepared_variant: Variant = await _environment_library.call("prepare")
 	var prepared: bool = bool(prepared_variant)
 	if prepared:
-		_update_progress(0.96, "VERIFYING REQUIRED ANIMATED CEMETERY BAT")
+		_update_progress(0.94, "VERIFYING REQUIRED ANIMATED CEMETERY BAT")
 		prepared = _validate_required_bat()
+	if prepared:
+		_update_progress(0.96, "VERIFYING REQUIRED SCANNED ROADBLOCK")
+		prepared = _validate_required_roadblock()
 	_update_progress(
 		0.98,
 		"EXPANDED ENVIRONMENT MODELS READY" if prepared else "REQUIRED ENVIRONMENT ASSET FAILED"
@@ -246,6 +257,33 @@ func _validate_required_bat() -> bool:
 			"REQUIRED BAT MODEL ERROR: the bat must contain a complete mesh and authored flight animation."
 		)
 		return false
+	return true
+
+
+func _validate_required_roadblock() -> bool:
+	if not ResourceLoader.exists(REQUIRED_ROADBLOCK_SCENE_PATH):
+		push_error(
+			"REQUIRED ROADBLOCK MODEL ERROR: %s is missing. Run tools/install_sketchfab_concrete_roadblock.ps1. No substitute roadblock is allowed." % REQUIRED_ROADBLOCK_SCENE_PATH
+		)
+		return false
+
+	var roadblock_scene: PackedScene = load(REQUIRED_ROADBLOCK_SCENE_PATH) as PackedScene
+	if roadblock_scene == null:
+		push_error("REQUIRED ROADBLOCK MODEL ERROR: the installed Sketchfab scene could not be loaded.")
+		return false
+
+	var roadblock_instance: Node3D = roadblock_scene.instantiate() as Node3D
+	if roadblock_instance == null:
+		push_error("REQUIRED ROADBLOCK MODEL ERROR: the installed Sketchfab scene could not be instantiated.")
+		return false
+
+	var mesh_nodes: Array[Node] = roadblock_instance.find_children("*", "MeshInstance3D", true, false)
+	if mesh_nodes.is_empty():
+		roadblock_instance.free()
+		push_error("REQUIRED ROADBLOCK MODEL ERROR: the installed scene contains no visible mesh.")
+		return false
+
+	_roadblock_prototype = roadblock_instance
 	return true
 
 
