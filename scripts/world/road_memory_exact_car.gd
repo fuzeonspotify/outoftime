@@ -3,6 +3,7 @@ extends "res://scripts/world/road_memory_final_cut.gd"
 const REQUIRED_CAR_NODE_NAME: String = "Porsche911Turbo"
 const BODY_MESH_NODE_NAME: String = "car_body"
 const METALLIC_RED: Color = Color("d0182b")
+const CENTER_WRECK_TIME_SCALE: float = 0.14
 const LEGACY_CAR_NODE_NAMES: Array[String] = [
 	"ModeledPontiacFallback",
 	"KenneyCC0Car",
@@ -45,6 +46,70 @@ func _build_car() -> void:
 	_add_car_lighting()
 	_add_car_camera()
 	_purge_non_porsche_geometry()
+
+
+func _build_crash_set() -> Node3D:
+	# Remove every recycled gameplay obstacle before the cinematic roadblock is
+	# built. This prevents a random barricade or skeleton from remaining between
+	# the Porsche and the authored first impact.
+	_clear_live_road_obstacles_for_crash()
+	return super._build_crash_set()
+
+
+func _play_center_impact_slow_motion(crash_set: Node3D) -> void:
+	# The first wreck now reads as a deliberate impact study rather than a quick
+	# montage. Real-time timers keep each shot length stable while physics runs at
+	# fourteen percent speed.
+	Engine.time_scale = CENTER_WRECK_TIME_SCALE
+	var target: Vector3 = crash_set.to_global(Vector3(0.0, 0.86, 0.0))
+	_place_close_crash_camera(target + Vector3(-4.2, 1.25, 3.35), target, 46.0)
+	await _wait_real_time(1.10)
+	_place_close_crash_camera(
+		target + Vector3(3.45, 1.55, -2.55),
+		target + Vector3(0.0, 0.30, -0.4),
+		42.0
+	)
+	await _wait_real_time(1.08)
+	_place_close_crash_camera(target + Vector3(-0.55, 5.05, 1.35), target, 50.0)
+	await _wait_real_time(1.02)
+	Engine.time_scale = 1.0
+
+
+func _clear_live_road_obstacles_for_crash() -> void:
+	var cleared_count: int = 0
+	for segment: Node3D in _road_segments:
+		if segment == null or not is_instance_valid(segment):
+			continue
+		var entries_variant: Variant = _segment_obstacles.get(segment.name, [])
+		if entries_variant is Array:
+			var entries: Array = entries_variant
+			for entry_variant: Variant in entries:
+				if not (entry_variant is Dictionary):
+					continue
+				var entry: Dictionary = entry_variant
+				var obstacle_node: Node3D = entry.get("node") as Node3D
+				if obstacle_node == null or not is_instance_valid(obstacle_node):
+					continue
+				obstacle_node.visible = false
+				if not obstacle_node.is_queued_for_deletion():
+					obstacle_node.queue_free()
+				cleared_count += 1
+		_segment_obstacles[segment.name] = []
+
+	# Catch any replacement hierarchy that was installed after the obstacle
+	# dictionary was populated. The metadata lives on each original obstacle root.
+	var remaining_nodes: Array[Node] = find_children("*", "Node3D", true, false)
+	for node: Node in remaining_nodes:
+		var obstacle_root: Node3D = node as Node3D
+		if obstacle_root == null or not obstacle_root.has_meta("obstacle_type"):
+			continue
+		if obstacle_root.is_queued_for_deletion():
+			continue
+		obstacle_root.visible = false
+		obstacle_root.queue_free()
+		cleared_count += 1
+
+	print("BRIDGE CRASH ROAD CLEARED: removed ", cleared_count, " live gameplay obstacles.")
 
 
 func _paint_car_metallic_red(model_root: Node3D) -> void:
