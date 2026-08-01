@@ -16,10 +16,17 @@ var _void_floor_grace_remaining: float = 0.0
 var _void_airborne_time: float = 0.0
 var _void_ground_state_initialized: bool = false
 var _cinematic_mode: bool = false
+var _middle_mouse_orbit_active: bool = false
+
+
+func _ready() -> void:
+	super._ready()
+	_refresh_orbit_control_hint.call_deferred()
 
 
 func set_cinematic_mode(enabled: bool) -> void:
 	_cinematic_mode = enabled
+	_middle_mouse_orbit_active = false
 	if enabled:
 		velocity = Vector3.ZERO
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -55,7 +62,14 @@ func _input(event: InputEvent) -> void:
 	if _cinematic_mode:
 		return
 	if event.is_action_pressed("ui_cancel"):
+		_middle_mouse_orbit_active = false
 		_set_pause_open(not _pause_open)
+		get_viewport().set_input_as_handled()
+		return
+
+	var mouse_button: InputEventMouseButton = event as InputEventMouseButton
+	if mouse_button != null and mouse_button.button_index == MOUSE_BUTTON_MIDDLE:
+		_middle_mouse_orbit_active = mouse_button.pressed
 		get_viewport().set_input_as_handled()
 		return
 
@@ -63,7 +77,7 @@ func _input(event: InputEvent) -> void:
 		return
 
 	var mouse_motion: InputEventMouseMotion = event as InputEventMouseMotion
-	if mouse_motion == null:
+	if mouse_motion == null or not _middle_mouse_orbit_active:
 		return
 
 	_apply_mouse_look(mouse_motion.relative)
@@ -71,8 +85,9 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(_event: InputEvent) -> void:
-	# Camera look is intentionally handled in _input so full-screen UI layers
-	# cannot consume mouse motion before it reaches the player controller.
+	# Middle-mouse orbit is intentionally handled in _input so full-screen UI
+	# layers cannot consume the button or mouse motion before it reaches the
+	# player controller.
 	pass
 
 
@@ -185,3 +200,20 @@ func _apply_mouse_look(look_delta: Vector2) -> void:
 		deg_to_rad(MIN_CAMERA_PITCH),
 		deg_to_rad(MAX_CAMERA_PITCH)
 	)
+
+
+func _refresh_orbit_control_hint() -> void:
+	if _controls_panel == null:
+		return
+	_controls_panel.offset_left = -450.0
+	_controls_panel.offset_bottom = 116.0
+	var labels: Array[Node] = _controls_panel.find_children("*", "Label", true, false)
+	for node: Node in labels:
+		var label: Label = node as Label
+		if label == null:
+			continue
+		label.text = (
+			"WASD  MOVE    SHIFT  SPRINT    SPACE  JUMP\n"
+			+ "E  INTERACT    HOLD MIDDLE MOUSE  ORBIT CAMERA    ESC  PAUSE"
+		)
+		break
